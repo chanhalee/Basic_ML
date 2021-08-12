@@ -1,13 +1,13 @@
-class InputNode extends Node implements InputNodeInter{
+class InputNode extends Node implements InputNodeInter {
     private static int inputNodeQuantity = 0;
 
-    public InputNode(int level, String name, double criticalPoint, boolean stimulated){
+    public InputNode(int level, String name, double criticalPoint, boolean stimulated) {
 
         super(level, name, criticalPoint, NODE_FORMAT);
         inputNodeQuantity++;
     }
 
-    private void activate(){
+    private void activate() {
         data.active = true;
         data.activeCounter++;
     }
@@ -18,8 +18,8 @@ class InputNode extends Node implements InputNodeInter{
     }
 
     @Override
-    public String toString(){
-        return "[Lv"+data.NODE_LEVEL+ " " + data.NAME + " -CP " + data.criticalPoint + " -AC " + data.activeCounter+ " -Hash "+ data.getIdentity()+"]";
+    public String toString() {
+        return "[Lv" + data.NODE_LEVEL + " " + data.NAME + " -CP " + data.criticalPoint + " -AC " + data.activeCounter + " -Hash " + data.getIdentity() + "]";
     }
 
     @Override
