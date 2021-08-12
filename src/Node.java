@@ -37,7 +37,7 @@ abstract class Node {
 
     @Override
     public String toString() {
-        return "[" + data.NAME + " -CP " + data.criticalPoint + " -AC " + data.activeCounter + " -Hash " + data.getIdentity() + "]";
+        return data.toString();
     }
 
 
@@ -98,6 +98,12 @@ class NodeData implements DataStorage {
     public NodeData copy() {
         return new NodeData(NODE_LEVEL, NAME, criticalPoint, activeCounter, backUpCounter, IDENTITY_DATA);
     }
+
+    @Override
+    public String toString() {
+        return "[" + NAME + " -CP " + criticalPoint + " -AC " + activeCounter + " -Hash " + getIdentity() + "]";
+    }
+
 }
 
 
@@ -147,7 +153,7 @@ class IdentityData implements DataStorage {
 //
 //
 //
-/*-------------------------------3.데이터 저장소와 관련된 인터페이스-------------------------------*/
+/*-------------------------------2.1.데이터 저장소와 관련된 인터페이스-------------------------------*/
 
 interface DataStorage {
     DataStorage copy(); /// deep copy, shallow copy 잘 구현하기!
@@ -173,4 +179,8 @@ interface InputNodeInter extends NoneOutputNodeInter {
 
 interface ProcessNodeInter extends NoneOutputNodeInter {
     final int NODE_FORMAT = 2;
+}
+
+interface OutputNodeInter {
+    final int NODE_FORMAT = 3;
 }

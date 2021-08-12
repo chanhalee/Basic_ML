@@ -17,10 +17,6 @@ class InputNode extends Node implements InputNodeInter {
         data.active = false;
     }
 
-    @Override
-    public String toString() {
-        return "[Lv" + data.NODE_LEVEL + " " + data.NAME + " -CP " + data.criticalPoint + " -AC " + data.activeCounter + " -Hash " + data.getIdentity() + "]";
-    }
 
     @Override
     public boolean transmitSpark() {
