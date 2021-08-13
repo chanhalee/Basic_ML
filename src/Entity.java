@@ -28,10 +28,19 @@ import java.util.*;
 /*-------------------------------1.개체의 기본형-------------------------------*/
 
 public class Entity {
-    private HashMap<IdentityData, HashMap> mindCircuit = null;
+    private HashMap<LevelData, HashMap> mindCircuit = new HashMap<>();
+    private HashSet<Node> previousSparkedNode = new HashSet<>();
+    private HashSet<Node> currentSparkedNode = new HashSet<>();
 
     Entity(ArrayList<String> inputFileList, ArrayList<String> outputFileList){
 
+    }
+
+    public static void main(String[] args) {
+        InputNode inputNode = new InputNode(1, "Test", 1.1, false);
+        ProcessNode processNode = new ProcessNode(1, "Test", 1.1);
+        Edge edge = new Edge(inputNode.getIdentity(), processNode.getIdentity(), 1.1);
+        processNode.addEdge(edge);
 
     }
 
@@ -65,18 +74,21 @@ public class Entity {
 /*-------------------------------2.1.LevelData-------------------------------*/
 
 class LevelData{
+    private final int NODE_FORMAT;
     private final int LEVEL;
     private final String LEVEl_NAME;
 
-    LevelData(int level, String name) {
+    LevelData(int nodeFormat, int level, String name) {
 
+        this.NODE_FORMAT = nodeFormat;
         this.LEVEL = level;
         this.LEVEl_NAME = name;
+
     }
 
     @Override
     public int hashCode() {
-        int result = (int) (LEVEL * 1000);
+        int result = (int) (NODE_FORMAT * 1000 + LEVEL);
         return result;
     }
 

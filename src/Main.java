@@ -16,5 +16,6 @@ public class Main {
         map.put(test3.getIdentity(), test2);
         map.put(copy.getIdentity(), test2);
         System.out.println(map);
+
     }
 }

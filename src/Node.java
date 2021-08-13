@@ -3,8 +3,11 @@
 ## 목차
 1. 노드의 기본형
 2. 노드에 관련된 데이터 저장소
-2.1 데이터 저장소와 관련된 인터페이스
-3. 노드의 발전형에 이식될 인터페이스
+2.1. NodeData
+2.1.1. IdentityData
+2.2.
+2.I. 데이터 저장소와 관련된 인터페이스
+I. 노드의 발전형에 이식될 인터페이스
 ----------------------------------------------- */
 //
 //
@@ -21,8 +24,9 @@ import java.util.*;
 abstract class Node {
     static int totalNodeQuantity = 0;
     NodeData data = null;
-    private NodeData backUpData = null; /*prevData 로 변수명 변경 검토*/
-    // 이상치 발견시 SentinelNode 가 접근하여 롤백
+    private NodeData backUpData = null; /*prevData 로 변수명 변경 검토*/    // 이상치 발견시 SentinelNode 가 접근하여 롤백
+
+
 
 
     Node(int level, String name, double criticalPoint, int nodeFormat) {
@@ -32,6 +36,18 @@ abstract class Node {
 
     public IdentityData getIdentity() {
         return data.getIdentity();
+    }
+
+    public boolean ignite(double sparkSum){
+        if(data.criticalPoint < sparkSum){
+            data.active = true;
+            return true;
+        }
+        return false;
+    }
+
+    public void addEdge(Edge edge){
+        data.addEdge(edge);
     }
 
 
@@ -56,6 +72,8 @@ abstract class Node {
 //
 /*-------------------------------2.노드와 관련된 데이터 저장소-------------------------------*/
 
+/*-------------------------------2.1.NodeData-------------------------------*/
+
 class NodeData implements DataStorage {
 
     final int NODE_LEVEL;
@@ -68,6 +86,7 @@ class NodeData implements DataStorage {
     int backUpCounter = 0;
     boolean active = false;
     double criticalPoint;
+    HashSet<Edge> edgeSet = new HashSet<>();
 
     NodeData(int level, String name, double criticalPoint, int nodeFormat, int serial) {
         this(level, name, criticalPoint);
@@ -88,6 +107,11 @@ class NodeData implements DataStorage {
         this.backUpCounter = backUpCounter;
     }
 
+    public void addEdge(Edge edge){
+        edgeSet.add(edge);
+
+    }
+
     public IdentityData getIdentity() {
         IdentityData result = IDENTITY_DATA.copy();
         return result;
@@ -106,6 +130,7 @@ class NodeData implements DataStorage {
 
 }
 
+/*-------------------------------2.1.1.IdentityData-------------------------------*/
 
 class IdentityData implements DataStorage {
     private final int SERIAL_NUMBER;
@@ -146,6 +171,11 @@ class IdentityData implements DataStorage {
 }
 //
 //
+/*-------------------------------2.2.Edge-------------------------------*/
+/// 독립된 파일에 만듦. (node 밖에서도 사용.)
+
+
+
 //
 //
 //
@@ -153,7 +183,9 @@ class IdentityData implements DataStorage {
 //
 //
 //
-/*-------------------------------2.1.데이터 저장소와 관련된 인터페이스-------------------------------*/
+//
+//
+/*-------------------------------2.I.데이터 저장소와 관련된 인터페이스-------------------------------*/
 
 interface DataStorage {
     DataStorage copy(); /// deep copy, shallow copy 잘 구현하기!
@@ -168,7 +200,7 @@ interface DataStorage {
 //
 //
 //
-/*-------------------------------3.노드의 발전형에 이식될 인터페이스-------------------------------*/
+/*-------------------------------I.노드의 발전형에 이식될 인터페이스-------------------------------*/
 interface NoneOutputNodeInter {
     boolean transmitSpark();
 }
