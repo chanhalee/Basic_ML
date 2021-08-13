@@ -1,11 +1,13 @@
 public class OutputNode extends Node implements OutputNodeInter{
 
-    OutputNode(int level, String name, double criticalPoint) {
-        super(level, name, criticalPoint, NODE_FORMAT);
+    OutputNode(String name, int serial, double criticalPoint) {
+        super(name, serial, criticalPoint);
     }
 
     @Override
-    void deActivate() {
-
+    int getNodeFormat() {
+        return NODE_FORMAT;
     }
+
+
 }

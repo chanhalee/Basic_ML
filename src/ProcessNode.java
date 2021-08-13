@@ -1,12 +1,12 @@
 public class ProcessNode extends Node implements ProcessNodeInter {
 
-    ProcessNode(int level, String name, double criticalPoint) {
-        super(level, name, criticalPoint, NODE_FORMAT);
+    ProcessNode(String name, int serial, double criticalPoint) {
+        super(name, serial, criticalPoint);
     }
 
     @Override
-    void deActivate() {
-        data.active = false;
+    int getNodeFormat() {
+        return NODE_FORMAT;
     }
 
 

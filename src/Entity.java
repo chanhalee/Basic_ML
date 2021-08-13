@@ -36,14 +36,6 @@ public class Entity {
 
     }
 
-    public static void main(String[] args) {
-        InputNode inputNode = new InputNode(1, "Test", 1.1, false);
-        ProcessNode processNode = new ProcessNode(1, "Test", 1.1);
-        Edge edge = new Edge(inputNode.getIdentity(), processNode.getIdentity(), 1.1);
-        processNode.addEdge(edge);
-
-    }
-
 }
 
 

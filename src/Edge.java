@@ -1,19 +1,19 @@
 import java.util.*;
 public class Edge {
     final double WEIGHT_COEFFICIENT = 0.05d;
-    final IdentityData START_NODE_ID;
-    final IdentityData DESTINATION_NODE_ID;
+    final int START_NODE_SERIAL;
+    final int DESTINATION_NODE_SERIAL;
     double weight;
     double weightDelta;
 
-    Edge(IdentityData start, IdentityData dest, double weight, double weighDelta){
+    Edge(int start, int dest, double weight, double weighDelta){
         this(start, dest, weight);
         this.weightDelta = weighDelta;
     }
 
-    Edge(IdentityData start, IdentityData dest, double weight){
-        this.START_NODE_ID = start;
-        this.DESTINATION_NODE_ID = dest;
+    Edge(int start, int dest, double weight){
+        this.START_NODE_SERIAL = start;
+        this.DESTINATION_NODE_SERIAL = dest;
         this.weight = weight;
         this.weightDelta = weight * WEIGHT_COEFFICIENT;
     }
@@ -33,13 +33,13 @@ public class Edge {
     double getWeight(){
         return weight;
     }
-    public IdentityData getDestination(){
-        return DESTINATION_NODE_ID;
+    public int getDestination(){
+        return DESTINATION_NODE_SERIAL;
     }
 
     @Override
     public int hashCode() {
-        int result = (int) (START_NODE_ID.hashCode() * 1000 + DESTINATION_NODE_ID.hashCode());
+        int result = (int) (START_NODE_SERIAL * 1000 + DESTINATION_NODE_SERIAL);
         return result;
     }
 

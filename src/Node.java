@@ -23,32 +23,50 @@ import java.util.*;
 
 abstract class Node {
     static int totalNodeQuantity = 0;
+    int activeCounter = 0;
+
+    final String NAME;
+    public final int SERIAL_NUM;
+    final double INIT_CRITICAL_POINT;
+    double criticalPoint;
+    boolean active = false;
+
+
+    HashSet<Edge> edgeSet = new HashSet<>();
     NodeData data = null;
     private NodeData backUpData = null; /*prevData 로 변수명 변경 검토*/    // 이상치 발견시 SentinelNode 가 접근하여 롤백
 
 
 
 
-    Node(int level, String name, double criticalPoint, int nodeFormat) {
-        data = new NodeData(level, name, criticalPoint, nodeFormat, ++totalNodeQuantity);
+    Node(String name, int serial, double criticalPoint) {
+        this.NAME = name;
+        this.SERIAL_NUM = serial;
+        this.INIT_CRITICAL_POINT = criticalPoint;
+        this.criticalPoint = criticalPoint;
+        data = new NodeData(name, serial, criticalPoint);
         backUpData = data.copy();
+        totalNodeQuantity++;
     }
 
-    public IdentityData getIdentity() {
-        return data.getIdentity();
+    public void addEdge(Edge edge){
+        edgeSet.add(edge);
     }
+
 
     public boolean ignite(double sparkSum){
-        if(data.criticalPoint < sparkSum){
-            data.active = true;
+        if(criticalPoint < sparkSum){
+            active = true;
+            activeCounter++;
             return true;
         }
         return false;
     }
 
-    public void addEdge(Edge edge){
-        data.addEdge(edge);
+    public void deActivate() {
+        active = false;
     }
+
 
 
     @Override
@@ -58,7 +76,8 @@ abstract class Node {
 
 
     ////----- ABSTRACT METHOD------
-    abstract void deActivate();
+    abstract int getNodeFormat();
+
     //센티넬을 위한 벡업기능 제작
 }
 //
@@ -76,63 +95,47 @@ abstract class Node {
 
 class NodeData implements DataStorage {
 
-    final int NODE_LEVEL;
+    final int SERIAL_NUMBER;
     final String NAME;
     final double INIT_CRITICAL;
 
 
-    private IdentityData IDENTITY_DATA;
     int activeCounter = 0;
     int backUpCounter = 0;
-    boolean active = false;
     double criticalPoint;
-    HashSet<Edge> edgeSet = new HashSet<>();
 
-    NodeData(int level, String name, double criticalPoint, int nodeFormat, int serial) {
-        this(level, name, criticalPoint);
-        this.IDENTITY_DATA = new IdentityData(nodeFormat, serial);
-    }
-
-    private NodeData(int level, String name, double criticalPoint) {
-        NODE_LEVEL = level;
+    NodeData(String name, int serial, double criticalPoint) {
         this.NAME = name;
         this.INIT_CRITICAL = criticalPoint;
         this.criticalPoint = criticalPoint;
+        this.SERIAL_NUMBER = serial;
     }
 
-    private NodeData(int level, String name, double criticalPoint, int activeCounter, int backUpCounter, IdentityData IDENTITY_DATA) {
-        this(level, name, criticalPoint);
-        this.IDENTITY_DATA = IDENTITY_DATA;
+
+    private NodeData(String name, int serial, double criticalPoint, int activeCounter, int backUpCounter) {
+        this.NAME = name;
+        this.INIT_CRITICAL = criticalPoint;
+        this.criticalPoint = criticalPoint;
         this.activeCounter = activeCounter;
         this.backUpCounter = backUpCounter;
+        this.SERIAL_NUMBER = serial;
     }
-
-    public void addEdge(Edge edge){
-        edgeSet.add(edge);
-
-    }
-
-    public IdentityData getIdentity() {
-        IdentityData result = IDENTITY_DATA.copy();
-        return result;
-    }
-
 
     @Override
     public NodeData copy() {
-        return new NodeData(NODE_LEVEL, NAME, criticalPoint, activeCounter, backUpCounter, IDENTITY_DATA);
+        return new NodeData(NAME.toString(), SERIAL_NUMBER, criticalPoint, activeCounter, backUpCounter);
     }
 
     @Override
     public String toString() {
-        return "[" + NAME + " -CP " + criticalPoint + " -AC " + activeCounter + " -Hash " + getIdentity() + "]";
+        return "[" + NAME + " -CP " + criticalPoint + " -AC " + activeCounter + " -Hash " + SERIAL_NUMBER + "]";
     }
 
 }
 
 /*-------------------------------2.1.1.IdentityData-------------------------------*/
 
-class IdentityData implements DataStorage {
+/*class IdentityData implements DataStorage {
     private final int SERIAL_NUMBER;
     private final int NODE_FORMAT;
 
@@ -168,7 +171,7 @@ class IdentityData implements DataStorage {
         return "" + this.hashCode();
     }
 
-}
+}*/
 //
 //
 /*-------------------------------2.2.Edge-------------------------------*/
