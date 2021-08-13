@@ -26,26 +26,23 @@ abstract class Node {
     int activeCounter = 0;
 
     final String NAME;
-    public final int SERIAL_NUM;
+    public final int SERIAL_NUMBER;
     final double INIT_CRITICAL_POINT;
     double criticalPoint;
     boolean active = false;
 
-
     HashSet<Edge> edgeSet = new HashSet<>();
-    NodeData data = null;
-    private NodeData backUpData = null; /*prevData 로 변수명 변경 검토*/    // 이상치 발견시 SentinelNode 가 접근하여 롤백
+    private NodeData backupData = null; /*prevData 로 변수명 변경 검토*/    // 이상치 발견시 SentinelNode 가 접근하여 롤백
 
 
 
 
     Node(String name, int serial, double criticalPoint) {
         this.NAME = name;
-        this.SERIAL_NUM = serial;
+        this.SERIAL_NUMBER = serial;
         this.INIT_CRITICAL_POINT = criticalPoint;
         this.criticalPoint = criticalPoint;
-        data = new NodeData(name, serial, criticalPoint);
-        backUpData = data.copy();
+        backupData = new NodeData(name, serial, criticalPoint);
         totalNodeQuantity++;
     }
 
@@ -67,11 +64,13 @@ abstract class Node {
         active = false;
     }
 
-
-
     @Override
     public String toString() {
-        return data.toString();
+        return "[" + NAME + " -CP " + criticalPoint + " -AC " + activeCounter + " -Hash " + SERIAL_NUMBER + "]";
+    }
+
+    private void updateBackupData(){
+        backupData.updateData(criticalPoint, activeCounter);
     }
 
 
@@ -119,6 +118,12 @@ class NodeData implements DataStorage {
         this.activeCounter = activeCounter;
         this.backUpCounter = backUpCounter;
         this.SERIAL_NUMBER = serial;
+    }
+
+    void updateData(double criticalPoint, int activeCounter){
+        this.criticalPoint = criticalPoint;
+        this.activeCounter = activeCounter;
+        backUpCounter++;
     }
 
     @Override
