@@ -105,5 +105,5 @@ class LevelData{
 //읽을 정보가 없는 줄의 첫 문자는 $ ($ 뒤에 나오는 정보들은 무시)
 class IOHelper{
     String inputForm1 = "[level-name] [Node_FORMAT]";
-    String inputForm2 = "[node-name] [critical] ["
+    String inputForm2 = "[node-name] [critical] [";/// 작업 중단점 레벨없이 역할로만 구분되는 회로 구상
 }
