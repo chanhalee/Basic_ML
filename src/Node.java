@@ -8,6 +8,7 @@
 2.2.
 2.I. 데이터 저장소와 관련된 인터페이스
 I. 노드의 발전형에 이식될 인터페이스
+E. 노드에 관련된 사용자 정의 예외
 ----------------------------------------------- */
 //
 //
@@ -67,6 +68,21 @@ abstract class Node {
     @Override
     public String toString() {
         return "[" + NAME + " -CP " + criticalPoint + " -AC " + activeCounter + " -Hash " + SERIAL_NUMBER + "]";
+    }
+    @Override
+    public int hashCode() {
+        int result = SERIAL_NUMBER;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj instanceof Node) {
+            Node that = (Node) obj;
+            if (this.hashCode() == that.hashCode())
+                return true;
+        }
+        return false;
     }
 
     private void updateBackupData(){
@@ -223,4 +239,14 @@ interface ProcessNodeInter extends NoneOutputNodeInter {
 
 interface OutputNodeInter {
     final int NODE_FORMAT = 3;
+}
+/*-------------------------------E.노드의 발전형에 이식될 인터페이스-------------------------------*/
+
+class InValidNodeFormatException extends RuntimeException{
+    InValidNodeFormatException(String msg){
+        super(msg);
+    }
+    InValidNodeFormatException(){
+        super("InValidNodeFormatException");
+    }
 }

@@ -97,7 +97,11 @@ public class Entity {
         return node;
     }
 
-    public static void main(String[] args) {/*
+
+
+
+
+    /*public static void main(String[] args) {
         Entity n = new Entity();
         HashMap<LevelData, HashSet> result = new HashMap<>();
         LevelData levelData = null;
@@ -128,8 +132,8 @@ public class Entity {
         } catch (IOException ie){
             ie.printStackTrace();
         }
-        System.out.println(result);*/
-    }
+        System.out.println(result);
+    }*/
 
 }
 
