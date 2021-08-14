@@ -22,18 +22,113 @@
 //
 //
 
-import jdk.jshell.spi.ExecutionControl;
-
 import java.util.*;
+import java.io.*;
+import static java.lang.System.exit;
+import java.util.logging.Level;
 /*-------------------------------1.개체의 기본형-------------------------------*/
 
 public class Entity {
-    private HashMap<LevelData, HashMap> mindCircuit = new HashMap<>();
+    private HashMap<LevelData, HashMap> mindCircuit = new HashMap<>(); // (levelData -(Node - Edge))의 구성.
     private HashSet<Node> previousSparkedNode = new HashSet<>();
     private HashSet<Node> currentSparkedNode = new HashSet<>();
 
     Entity(ArrayList<String> inputFileList, ArrayList<String> outputFileList){
 
+    }
+    Entity(){};
+
+    private HashMap readNodeFromFile(String inputFile){// Node 만 읽어 ArrayList 로 저장, level 과 묶어 map 을 만들어 반환.
+        HashMap<LevelData, HashSet> result = new HashMap<>();
+        LevelData levelData = null;
+        HashSet<Node> nodeData = null;
+        String fileLine = "";
+        ArrayList<String> splitInputData = null;
+        try {
+
+            FileReader fileInput = new FileReader(inputFile);
+            BufferedReader inputBuffer = new BufferedReader(fileInput);
+            for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++){  /// 파일에서 라인 읽어오기
+                if(fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할
+                    continue;
+                if(fileLine.trim().startsWith("##")) {    //라인의 가장 첫번째에 오는 ## 새로운 레벨에 속하는 노드의 입력임을 나타냄.
+                    fileLine = fileLine.replace("#", "");
+                    fileLine = fileLine.replace("[", "");
+                    splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
+                    levelData = makeLevelDataFromAList(splitInputData);
+                    nodeData = new HashSet<Node>();
+                    result.put(levelData, nodeData);
+                    continue;
+                }
+                fileLine = fileLine.replace("[", "");
+                splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
+                nodeData.add(makeNodeFromAList(splitInputData));
+            }
+
+        } catch (IOException ie){
+            ie.printStackTrace();
+        }
+        return result;
+    }
+
+    private LevelData makeLevelDataFromAList(ArrayList<String> data){
+        LevelData levelData = null;
+        levelData = new LevelData(Integer.parseInt(data.get(0).trim()), Integer.parseInt(data.get(1).trim()), data.get(2).trim());
+        return levelData;
+    }
+
+    private Node makeNodeFromAList(ArrayList<String> data){
+        Node node = null;
+        int nodeFormat = Integer.parseInt(data.get(0).trim());
+
+
+        try {
+            node = switch (nodeFormat) {
+                case InputNodeInter.NODE_FORMAT -> new InputNode(data.get(1).trim(), Integer.parseInt(data.get(2).trim()), Double.parseDouble(data.get(3).trim()), Boolean.parseBoolean(data.get(4).trim()));
+                case ProcessNodeInter.NODE_FORMAT -> new ProcessNode(data.get(1).trim(), Integer.parseInt(data.get(2).trim()), Double.parseDouble(data.get(3).trim()));
+                case OutputNodeInter.NODE_FORMAT -> new OutputNode(data.get(1).trim(), Integer.parseInt(data.get(2).trim()), Double.parseDouble(data.get(3).trim()));
+                default -> throw new InValidNodeFormatException("정의되지 않은 NODE_FORMAT 입력. 값: " + nodeFormat);
+            };
+        } catch(InValidNodeFormatException ne){
+            System.out.println("에러 메시지: " + ne.getMessage());
+            ne.printStackTrace();
+        }
+
+        return node;
+    }
+
+    public static void main(String[] args) {/*
+        Entity n = new Entity();
+        HashMap<LevelData, HashSet> result = new HashMap<>();
+        LevelData levelData = null;
+        HashSet<Node> nodeData = null;
+        String fileLine = "";
+        ArrayList<String> splitInputData = null;
+        try {
+
+            FileReader fileInput = new FileReader("testData.txt");
+            BufferedReader inputBuffer = new BufferedReader(fileInput);
+            for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++){  /// 파일에서 라인 읽어오기
+                if(fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할
+                    continue;
+                if(fileLine.trim().startsWith("##")) {    //라인의 가장 첫번째에 오는 ## 새로운 레벨에 속하는 노드의 입력임을 나타냄.
+                    fileLine = fileLine.replace("#", "");
+                    fileLine = fileLine.replace("[", "");
+                    splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
+                    levelData = n.makeLevelDataFromAList(splitInputData);
+                    nodeData = new HashSet<Node>();
+                    result.put(levelData, nodeData);
+                    continue;
+                }
+                fileLine = fileLine.replace("[", "");
+                splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
+                nodeData.add(n.makeNodeFromAList(splitInputData));
+            }
+
+        } catch (IOException ie){
+            ie.printStackTrace();
+        }
+        System.out.println(result);*/
     }
 
 }
