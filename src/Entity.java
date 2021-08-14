@@ -42,9 +42,10 @@ public class Entity {
         HashMap<Integer, HashSet<Edge>> tempEdgeMap = readEdgeFromFile(inputFileList.get(1));
         /*HashMap<LevelData, HashMap> */
     }
-    //Entity(){};
 
-
+    public HashMap<LevelData, HashMap<Node, HashSet<Edge>>> returnMindCircuit(){    // 프로젝트 완성시 삭제할것!
+        return mindCircuit;
+    }
 
 
 
@@ -171,8 +172,10 @@ public class Entity {
             for(Node n : tempNodeSet){
                 if(n.SERIAL_NUMBER == i){
                     NodeNEdgeMap.put(n, edgeMap.get(i));
-                    edgeMap.remove(i);
-                    tempNodeSet.remove(n);
+                    //실행속도를 높이기 위해 아래 두줄을 만들었었는데 foreach문 안에서 foreach의 소스를 건드리는 것이 예외를 발생시킴!
+                    // 해당 매칭 함수에서 상당한 시간이 소모될 것으로 예상되어 향후 개선이 필요함.
+/*                    edgeMap.remove(i);
+                    tempNodeSet.remove(n);*/
                 }
             }
         }
@@ -203,7 +206,7 @@ public class Entity {
         ArrayList<String> splitInputData = null;
         try {
 
-            FileReader fileInput = new FileReader("testData.txt");
+            FileReader fileInput = new FileReader("testInputNode.txt");
             BufferedReader inputBuffer = new BufferedReader(fileInput);
             for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++){  /// 파일에서 라인 읽어오기
                 if(fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할

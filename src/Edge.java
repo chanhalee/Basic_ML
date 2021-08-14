@@ -60,6 +60,11 @@ public class Edge implements EdgeInter{
         return false;
     }
 
+    @Override
+    public String toString(){
+        return "["+START_NODE_SERIAL+"] ["+DESTINATION_NODE_SERIAL+"] ["+weight +"]";
+    }
+
 }
 
 interface EdgeInter{
