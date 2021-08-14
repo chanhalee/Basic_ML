@@ -32,11 +32,19 @@ public class Entity {
     private HashMap<LevelData, HashMap> mindCircuit = new HashMap<>(); // (levelData -(Node - Edge))의 구성.
     private HashSet<Node> previousSparkedNode = new HashSet<>();
     private HashSet<Node> currentSparkedNode = new HashSet<>();
+    ArrayList<String> inputFileList;
+    ArrayList<String> outputFileList;
 
     Entity(ArrayList<String> inputFileList, ArrayList<String> outputFileList){
+        this.inputFileList = inputFileList;
+        this.outputFileList = outputFileList;
 
     }
-    Entity(){};
+    //Entity(){};
+
+
+
+
 
     private HashMap readNodeFromFile(String inputFile){// Node 만 읽어 ArrayList 로 저장, level 과 묶어 map 을 만들어 반환.
         HashMap<LevelData, HashSet> result = new HashMap<>();
@@ -44,8 +52,10 @@ public class Entity {
         HashSet<Node> nodeData = null;
         String fileLine = "";
         ArrayList<String> splitInputData = null;
-        try {
 
+
+
+        try {
             FileReader fileInput = new FileReader(inputFile);
             BufferedReader inputBuffer = new BufferedReader(fileInput);
             for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++){  /// 파일에서 라인 읽어오기
@@ -95,6 +105,64 @@ public class Entity {
         }
 
         return node;
+    }
+
+    private HashMap<Integer, Edge> readEdgeFromFile(String inputFile){
+        HashMap<Integer, Edge> result = new HashMap<>();
+        String fileLine = "";
+        ArrayList<String> splitInputData = null;
+
+        try {
+            FileReader fileInput = new FileReader(inputFile);
+            BufferedReader inputBuffer = new BufferedReader(fileInput);
+
+            for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++){  /// 파일에서 라인 읽어오기
+                if(fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할
+                    continue;
+                fileLine = fileLine.replace("[", "");
+                splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
+                result.put(Integer.valueOf(splitInputData.get(1)), makeEdgeFromAList(splitInputData));
+            }
+        }catch (IOException ie){
+            ie.printStackTrace();
+        }
+
+        return result;
+    }
+
+
+
+    private Edge makeEdgeFromAList(ArrayList<String> data){
+        Edge edge = null;
+        Integer startNodeSerial;
+        int edgeFormat = Integer.parseInt(data.get(0).trim());
+
+        try {
+            if(edgeFormat == 1) {
+                if (data.size() == 5)
+                    edge = new Edge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)), Double.parseDouble(data.get(4)));
+                else if (data.size() == 4)
+                    edge = new Edge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)));
+                else
+                    throw new InValidEdgeFormatException("정의되지 않은 Edge 생성자 매개변수 개수 값: " + data.size());
+
+            }else if(edgeFormat == 2){
+
+                if(data.size() == 6)
+                    edge = new LoopEdge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)), Double.parseDouble(data.get(4)), Integer.parseInt(data.get(5)));
+                else if(data.size() == 5)
+                    edge = new LoopEdge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)), Integer.parseInt(data.get(4)));
+                else throw new InValidEdgeFormatException("정의되지 않은 LoopEdge 생성자 매개변수 개수 값: " + data.size());
+
+            }
+            else throw new InValidEdgeFormatException("정의되지 않은 EDGE_FORMAT 입력. 값: " + edgeFormat);
+
+        } catch(InValidEdgeFormatException ee){
+            System.out.println("에러 메시지: " + ee.getMessage());
+            ee.printStackTrace();
+        }
+
+        return edge;
     }
 
 
