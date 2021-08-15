@@ -1,4 +1,6 @@
 import java.util.*;
+
+
 public class Edge implements EdgeInter{
     final double WEIGHT_COEFFICIENT = 0.05d;
     final int START_NODE_SERIAL;
@@ -11,7 +13,6 @@ public class Edge implements EdgeInter{
         this(start, dest, weight);
         this.weightDelta = weighDelta;
     }
-
     Edge(int start, int dest, double weight){
         this.START_NODE_SERIAL = start;
         this.DESTINATION_NODE_SERIAL = dest;
@@ -24,7 +25,6 @@ public class Edge implements EdgeInter{
     public void Activated(){    // 속한 노드가 흥분했을 경우 실행
         activeCounter++;
     }
-
     void weightAdjustFireTogether(){
         weight += weightDelta;
     }
@@ -43,13 +43,10 @@ public class Edge implements EdgeInter{
     public int getDestination(){
         return DESTINATION_NODE_SERIAL;
     }
-
     @Override
     public int hashCode() {
-
         return Integer.parseInt(String.valueOf(START_NODE_SERIAL)+ String.valueOf(DESTINATION_NODE_SERIAL));
     }
-
     @Override
     public boolean equals(Object obj) {
         if (obj != null && obj instanceof Edge) {
@@ -59,12 +56,10 @@ public class Edge implements EdgeInter{
         }
         return false;
     }
-
     @Override
     public String toString(){
         return "["+START_NODE_SERIAL+"] ["+DESTINATION_NODE_SERIAL+"] ["+weight +"]";
     }
-
 }
 
 interface EdgeInter{

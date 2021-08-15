@@ -29,9 +29,11 @@ import java.util.logging.Level;
 /*-------------------------------1.개체의 기본형-------------------------------*/
 
 public class Entity {
-    private HashMap<LevelData, HashMap<Node, HashSet<Edge>>> mindCircuit; // (levelData -(Node - Edge))의 구성.
+    private HashMap<LevelData, HashMap<Node, HashSet<Edge>>> mindCircuit; // (levelData -(Node - [Edge]))의 구성.
+    private ArrayList<HashMap<Node, HashSet<Edge>>> circuitList;
     private HashSet<Node> previousSparkedNode = new HashSet<>();
     private HashSet<Node> currentSparkedNode = new HashSet<>();
+    /*Queue<ArrayList<Boolean>> inputQueue;*/
     ArrayList<String> inputFileList;
     ArrayList<String> outputFileList;
 
@@ -39,13 +41,13 @@ public class Entity {
         this.inputFileList = inputFileList;
         this.outputFileList = outputFileList;
         mindCircuit =  Matcher(readNodeFromFile(inputFileList.get(0)), readEdgeFromFile(inputFileList.get(1)));
-        HashMap<Integer, HashSet<Edge>> tempEdgeMap = readEdgeFromFile(inputFileList.get(1));
-        /*HashMap<LevelData, HashMap> */
+        circuitList = makeCircuitListFromMap(mindCircuit);
     }
 
     public HashMap<LevelData, HashMap<Node, HashSet<Edge>>> returnMindCircuit(){    // 프로젝트 완성시 삭제할것!
         return mindCircuit;
     }
+    public ArrayList<HashMap<Node, HashSet<Edge>>> returnCircuitList() {return circuitList;};
 
 
 
@@ -168,10 +170,11 @@ public class Entity {
         for(HashSet<Node> i :nodeMap.values()) {
             tempNodeSet.addAll(i);
         }
-        for(Integer i : edgeMap.keySet()){
-            for(Node n : tempNodeSet){
+        for(Node n : tempNodeSet){
+            NodeNEdgeMap.put(n, null);
+            for(Integer i : edgeMap.keySet()){
                 if(n.SERIAL_NUMBER == i){
-                    NodeNEdgeMap.put(n, edgeMap.get(i));
+                    NodeNEdgeMap.replace(n, edgeMap.get(i));
                     //실행속도를 높이기 위해 아래 두줄을 만들었었는데 foreach문 안에서 foreach의 소스를 건드리는 것이 예외를 발생시킴!
                     // 해당 매칭 함수에서 상당한 시간이 소모될 것으로 예상되어 향후 개선이 필요함.
 /*                    edgeMap.remove(i);
@@ -187,48 +190,31 @@ public class Entity {
                 }
             }
         }
-
-
-
         return result;
     }
 
-
-
-
-
-    /*public static void main(String[] args) {
-        Entity n = new Entity();
-        HashMap<LevelData, HashSet> result = new HashMap<>();
-        LevelData levelData = null;
-        HashSet<Node> nodeData = null;
-        String fileLine = "";
-        ArrayList<String> splitInputData = null;
-        try {
-
-            FileReader fileInput = new FileReader("testInputNode.txt");
-            BufferedReader inputBuffer = new BufferedReader(fileInput);
-            for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++){  /// 파일에서 라인 읽어오기
-                if(fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할
-                    continue;
-                if(fileLine.trim().startsWith("##")) {    //라인의 가장 첫번째에 오는 ## 새로운 레벨에 속하는 노드의 입력임을 나타냄.
-                    fileLine = fileLine.replace("#", "");
-                    fileLine = fileLine.replace("[", "");
-                    splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
-                    levelData = n.makeLevelDataFromAList(splitInputData);
-                    nodeData = new HashSet<Node>();
-                    result.put(levelData, nodeData);
-                    continue;
-                }
-                fileLine = fileLine.replace("[", "");
-                splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
-                nodeData.add(n.makeNodeFromAList(splitInputData));
+    private ArrayList<HashMap<Node, HashSet<Edge>>> makeCircuitListFromMap(HashMap<LevelData, HashMap<Node, HashSet<Edge>>> map){
+        ArrayList<HashMap<Node, HashSet<Edge>>> result = new ArrayList<HashMap<Node, HashSet<Edge>>>();
+        Set<LevelData> keySet = map.keySet();
+        Iterator<LevelData> iter;
+        LevelData curVal;
+        LevelData minVal;
+        LevelData prevMinVal = new LevelData(0, 0, "");
+        while(keySet.size() != result.size()) {
+            iter = keySet.iterator();
+            minVal = iter.next();
+            while (iter.hasNext()) {
+                if((curVal = iter.next()).hashCode() < minVal.hashCode() && curVal.hashCode() > prevMinVal.hashCode())
+                    minVal = curVal;
             }
-
-        } catch (IOException ie){
-            ie.printStackTrace();
+            result.add(map.get(minVal));
+            prevMinVal = minVal;
         }
-        System.out.println(result);
+        return result;
+    }
+
+    /*private Queue<ArrayList<Boolean>> readInputQueue(String inputFile){
+
     }*/
 
 }
@@ -270,8 +256,8 @@ class LevelData{
         this.NODE_FORMAT = nodeFormat;
         this.LEVEL = level;
         this.LEVEl_NAME = name;
-
     }
+
 
     @Override
     public int hashCode() {

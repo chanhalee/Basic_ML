@@ -7,6 +7,7 @@ public class Main {
         ArrayList<String> inputFileList = new ArrayList<>();
         ArrayList<String> outputFileList = new ArrayList<>();
         HashMap<LevelData, HashMap<Node, HashSet<Edge>>> testResult;
+        ArrayList<HashMap<Node, HashSet<Edge>>> testResult2;
         inputFileList.add("testInputNode.txt");
         inputFileList.add("testInputEdge.txt");
         outputFileList.add("testOutputNode.txt");
@@ -15,5 +16,7 @@ public class Main {
         Entity entity = new Entity(inputFileList, outputFileList);
         testResult = entity.returnMindCircuit();
         System.out.println(testResult);
+        testResult2 = entity.returnCircuitList();
+        System.out.println(testResult2);
     }
 }
