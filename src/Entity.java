@@ -33,7 +33,7 @@ public class Entity {
     private ArrayList<HashMap<Node, HashSet<Edge>>> circuitList;
     private HashSet<Node> previousSparkedNode = new HashSet<>();
     private HashSet<Node> currentSparkedNode = new HashSet<>();
-    /*Queue<ArrayList<Boolean>> inputQueue;*/
+    LinkedList<ArrayList<Boolean>> inputQueue;
     ArrayList<String> inputFileList;
     ArrayList<String> outputFileList;
 
@@ -42,12 +42,41 @@ public class Entity {
         this.outputFileList = outputFileList;
         mindCircuit =  Matcher(readNodeFromFile(inputFileList.get(0)), readEdgeFromFile(inputFileList.get(1)));
         circuitList = makeCircuitListFromMap(mindCircuit);
+        inputQueue = readInputQueue(inputFileList.get(2));
     }
 
     public HashMap<LevelData, HashMap<Node, HashSet<Edge>>> returnMindCircuit(){    // 프로젝트 완성시 삭제할것!
         return mindCircuit;
     }
-    public ArrayList<HashMap<Node, HashSet<Edge>>> returnCircuitList() {return circuitList;};
+    public ArrayList<HashMap<Node, HashSet<Edge>>> returnCircuitList() {return circuitList;}
+    public LinkedList<ArrayList<Boolean>> returnInputQueue(){ return inputQueue;}
+
+    public void visualiseCircuit(){
+        int level = 0;
+        System.out.println("회로 도식화");
+        if(circuitList.isEmpty()) {
+            System.out.println("빈 회로!");
+            return;
+        }
+        for(HashMap<Node, HashSet<Edge>> nhm : circuitList){
+            System.out.println("Level: " + level++);
+            if(nhm == null)
+                continue;
+            for(Node n: nhm.keySet()){
+                System.out.print("\t\t ");
+                System.out.println(n);
+                HashSet<Edge> ehs = nhm.get(n);
+                if(ehs == null)
+                    continue;
+                for(Edge e: ehs){
+                    System.out.print("\t\t\t\t\t\t\t\t\t\t\t  ");
+                    System.out.println(e);
+                }
+            }
+        }
+        System.out.println();
+        System.out.println();
+    }
 
 
 
@@ -202,10 +231,17 @@ public class Entity {
         LevelData prevMinVal = new LevelData(0, 0, "");
         while(keySet.size() != result.size()) {
             iter = keySet.iterator();
-            minVal = iter.next();
-            while (iter.hasNext()) {
-                if((curVal = iter.next()).hashCode() < minVal.hashCode() && curVal.hashCode() > prevMinVal.hashCode())
+            curVal = iter.next();
+            while(curVal.hashCode() <= prevMinVal.hashCode()){
+                curVal = iter.next();
+            }
+            minVal = curVal;
+            iter = keySet.iterator();
+            while(iter.hasNext()){
+                curVal = iter.next();
+                if(curVal.hashCode() < minVal.hashCode() && curVal.hashCode() > prevMinVal.hashCode()){
                     minVal = curVal;
+                }
             }
             result.add(map.get(minVal));
             prevMinVal = minVal;
@@ -213,9 +249,42 @@ public class Entity {
         return result;
     }
 
-    /*private Queue<ArrayList<Boolean>> readInputQueue(String inputFile){
+    private LinkedList<ArrayList<Boolean>> readInputQueue(String inputFile) {
+        LinkedList<ArrayList<Boolean>> result = new LinkedList<>();
+        ArrayList<String> splitInputData;
+        String fileLine = "";
+        try {
+            FileReader fileInput = new FileReader(inputFile);
+            BufferedReader inputBuffer = new BufferedReader(fileInput);
+            for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++) {  /// 파일에서 라인 읽어오기
+                if (fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할
+                    continue;
+                fileLine = fileLine.replace("[", "");
+                splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
+                result.add(makeQueueFromSplitData(splitInputData));
+            }
+        } catch (IOException ie){
+            ie.printStackTrace();
+        }
+        return result;
+    }
+    private ArrayList<Boolean> makeQueueFromSplitData(ArrayList<String> data){
+        ArrayList<Boolean> result = new ArrayList<>();
+        try {
+            if(data.size() != circuitList.get(0).size()){
+                throw new InValidInputQueueFormatException("입력의 갯수와 인풋노드의 개수가 불일치합니다. 입력 갯수: " + data.size() + ", 필요 갯수: "+ circuitList.get(0).size());
+            }
+            for(String s : data){
+                result.add(Boolean.parseBoolean(s));
+            }
+        }catch(InValidInputQueueFormatException qe){
+            System.out.println("에러 메시지: " + qe.getMessage());
+            qe.printStackTrace();
+        }
+        return result;
+    }
 
-    }*/
+
 
 }
 
@@ -284,10 +353,13 @@ class LevelData{
 
 /*-------------------------------3.* 개체의 동작에 필요한 클래스-------------------------------*/
 
-/*-------------------------------3.1.파일 입출력 관련 클래스-------------------------------*/
-//첫 줄엔 레벨의 이름, 노드의 형식(input: 1, output: 2, process: 3) 두번째 줄 부터 각 노드 정보
-//읽을 정보가 없는 줄의 첫 문자는 $ ($ 뒤에 나오는 정보들은 무시)
-class IOHelper{
-    String inputForm1 = "[level-name] [Node_FORMAT]";
-    String inputForm2 = "[node-name] [critical] [";/// 작업 중단점 레벨없이 역할로만 구분되는 회로 구상
+/*-------------------------------3.1.inputQueue 관련 예외 클래스-------------------------------*/
+
+class InValidInputQueueFormatException extends RuntimeException{
+    InValidInputQueueFormatException(String msg){
+        super(msg);
+    }
+    InValidInputQueueFormatException(){
+        super("InValidInputQueueFormatException");
+    }
 }

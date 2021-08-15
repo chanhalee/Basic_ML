@@ -20,6 +20,11 @@ public class LoopEdge extends Edge implements LoopAble{
         return (activeCounter < LOOP_COUNT);
     }
 
+    @Override
+    public String toString(){
+        return "["+START_NODE_SERIAL+"] ["+DESTINATION_NODE_SERIAL+"] ["+weight +"] ["+ LOOP_COUNT +"]";
+    }
+
 }
 
 interface LoopAble{}

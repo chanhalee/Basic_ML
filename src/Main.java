@@ -10,13 +10,14 @@ public class Main {
         ArrayList<HashMap<Node, HashSet<Edge>>> testResult2;
         inputFileList.add("testInputNode.txt");
         inputFileList.add("testInputEdge.txt");
+        inputFileList.add("testInputQueue.txt");
         outputFileList.add("testOutputNode.txt");
         outputFileList.add("testOutputEdge.txt");
+        outputFileList.add("testOutputQueue.txt");
 
         Entity entity = new Entity(inputFileList, outputFileList);
-        testResult = entity.returnMindCircuit();
-        System.out.println(testResult);
-        testResult2 = entity.returnCircuitList();
-        System.out.println(testResult2);
+        entity.visualiseCircuit();
+        System.out.println(entity.returnInputQueue());
+
     }
 }
