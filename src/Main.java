@@ -18,12 +18,7 @@ public class Main {
         Entity entity = new Entity(inputFileList, outputFileList);
         entity.visualiseCircuit();
         System.out.println(entity.returnQueueDataStorage());
-
-        HashMap<Integer, Integer> teMap = new HashMap<>();
-        teMap.put(1,1);
-        teMap.put(1,2);
-        System.out.println(teMap);
-        System.out.println(teMap.remove(2));
-        System.out.println(teMap);
+        entity.runCircuit();
+        System.out.println(entity.returnTotalSimulationLog());
     }
 }

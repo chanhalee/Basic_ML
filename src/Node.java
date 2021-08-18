@@ -25,7 +25,7 @@ import java.util.*;
 abstract class Node {
     static int totalNodeQuantity = 0;
     int activeCounter = 0;
-    HashSet<Edge> edgeSet = null;
+    HashSet<Edge> edgeSet = new HashSet<>();
 
     final String NAME;
     public final int SERIAL_NUMBER;
@@ -58,7 +58,7 @@ abstract class Node {
 
 
     public boolean askIgnite(double sparkSum){
-        return criticalPoint < sparkSum;
+        return criticalPoint <= sparkSum;
     }
 
     public void activate(){

@@ -37,7 +37,7 @@ public class Entity {
     private HashMap<Integer, HashMap<Integer, Double>> stimulationDeposit;
     private HashSet<Node> currentSparkedNode = new HashSet<>();
     private HashMap<Integer, HashSet<Integer>> cycleLog;
-    private HashMap<Integer, HashMap<Integer, HashSet<Integer>>> totalSimulationLog;
+    private HashMap<Integer, HashMap<Integer, HashSet<Integer>>> totalSimulationLog = new HashMap<>();
     private QueueDataStorage queueData;
     ArrayList<String> inputFileList;
     ArrayList<String> outputFileList;
@@ -63,6 +63,9 @@ public class Entity {
     }
     public ArrayList<HashMap<Node, HashSet<Edge>>> returnCircuitList() {return circuitList;}
     public QueueDataStorage returnQueueDataStorage(){ return queueData;}
+    public HashMap<Integer, HashMap<Integer, HashSet<Integer>>> returnTotalSimulationLog(){
+        return totalSimulationLog;
+    }
 
     public void visualiseCircuit(){
         int level = 0;
@@ -310,7 +313,7 @@ public class Entity {
     }
 
 
-    public void runCircuit(){       //1회기 실행.
+    public void runCircuit(){
         HashMap<Integer, Boolean> input;
         HashMap<Integer, Double> nextWave;
         Node tempNode;
@@ -319,6 +322,7 @@ public class Entity {
         int cycleCounter = 0;
         while(true) {
             try {
+                cycleLog = new HashMap<>();
                 cycleLog.put(0, new HashSet<Integer>());
                 input = queueData.getNextQueue();
                 for (Integer i : input.keySet()) {
@@ -329,16 +333,16 @@ public class Entity {
                         cycleLog.get(0).add(tempNode.SERIAL_NUMBER);
                     }
                 }
-                ignitedEdgeSet = edgeOfIgnited(currentSparkedNode);
-                nextWave = sumOfWeighInOrderOfDestNode(ignitedEdgeSet);
             } catch (EndOfQueueException eqe) {
                 System.out.println("** 모든 회기 종료 **");
                 return;
             }
+            int tickCounter = 1;
             while (!currentSparkedNode.isEmpty()) {
-                int tickCounter = 1;
+                ignitedEdgeSet = edgeOfIgnited(currentSparkedNode);
+                nextWave = sumOfWeighInOrderOfDestNode(ignitedEdgeSet);
+                System.out.println(currentSparkedNode);
                 cycleLog.put(tickCounter, new HashSet<Integer>());
-                tickCounter++;
                 //previousSparkedNode.currentSparkedNode
                 for (Integer i : nextWave.keySet()) {
                     tempNode = findMatchingNode(i);
@@ -351,6 +355,7 @@ public class Entity {
                     }
                 }
                 postTickProcess(ignitedEdgeSet, stimulatedNodeNext);
+                tickCounter++;
             }
             totalSimulationLog.put(cycleCounter, cycleLog);
             cycleCounter++;
@@ -386,10 +391,12 @@ public class Entity {
                 continue;
             result.addAll(n.getEdge());
         }
+        HashSet<Edge> tempSet = new HashSet<>();
         for(Edge e : result){
             if(! e.checkVital())
-                result.remove(e);
+                tempSet.add(e);
         }
+        result.removeAll(tempSet);
         return result;
     }
 
