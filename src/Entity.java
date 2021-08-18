@@ -355,12 +355,16 @@ public class Entity {
                     }
                 }
                 postTickProcess(ignitedEdgeSet, stimulatedNodeNext);
+                for(Node n : stimulatedNodeNext)
+                    n.deActivate();
+                currentSparkedNode.addAll(stimulatedNodeNext);
+                stimulatedNodeNext = new HashSet<>();
                 tickCounter++;
             }
             totalSimulationLog.put(cycleCounter, cycleLog);
             cycleCounter++;
         }
-
+        //모든 노드와 엣지 비활성화 과정 추가 (틱마다)
 
     }
 
@@ -387,8 +391,6 @@ public class Entity {
     private HashSet<Edge> edgeOfIgnited(HashSet<Node> currentSparkedNode){
         HashSet<Edge> result = new HashSet<>();
         for(Node n :currentSparkedNode) {
-            if(n instanceof OutputNodeInter)
-                continue;
             result.addAll(n.getEdge());
         }
         HashSet<Edge> tempSet = new HashSet<>();
@@ -424,6 +426,14 @@ public class Entity {
                     if(n.matches(e.getDestination())){
                         e.weightAdjustFireTogether();
                     }
+                }
+            }
+        }
+        // 이번 틱에 활성화된 엣지들 중 후행노드가 흥분한 엣지의 가중치 보정과정
+        for(Edge e: ignitedEdgeSet){
+            for(Node n : currentSparkedNode){
+                if(n.matches(e.getDestination())){
+                    e.weightAdjustFireTogether();
                 }
             }
         }

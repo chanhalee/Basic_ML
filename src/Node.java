@@ -25,7 +25,7 @@ import java.util.*;
 abstract class Node {
     static int totalNodeQuantity = 0;
     int activeCounter = 0;
-    HashSet<Edge> edgeSet = new HashSet<>();
+    HashSet<Edge> edgeSet = new HashSet<>(); // 여기서 할당하지 않고 null으로 초기화 한다면 outputNode 의 경우 회로에서 오류발생.
 
     final String NAME;
     public final int SERIAL_NUMBER;
