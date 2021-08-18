@@ -17,7 +17,7 @@ public class Main {
 
         Entity entity = new Entity(inputFileList, outputFileList);
         entity.visualiseCircuit();
-        System.out.println(entity.returnInputQueue());
+        System.out.println(entity.returnQueueDataStorage());
 
     }
 }

@@ -65,6 +65,14 @@ abstract class Node {
         active = false;
     }
 
+    public boolean matches(Object obj) {
+        if(obj instanceof Integer){
+            Integer that = (Integer) obj;
+            return this.hashCode() == that;
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return "[" + NAME + " -CP " + criticalPoint + " -AC " + activeCounter + " -Hash " + SERIAL_NUMBER + "]";
@@ -80,6 +88,12 @@ abstract class Node {
         if (obj != null && obj instanceof Node) {
             Node that = (Node) obj;
             if (this.hashCode() == that.hashCode())
+                return true;
+
+        }
+        if(obj instanceof Integer){
+            Integer that = (Integer) obj;
+            if(this.hashCode() == that)
                 return true;
         }
         return false;

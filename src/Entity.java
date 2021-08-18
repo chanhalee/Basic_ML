@@ -31,9 +31,9 @@ import java.util.logging.Level;
 public class Entity {
     private HashMap<LevelData, HashMap<Node, HashSet<Edge>>> mindCircuit; // (levelData -(Node - [Edge]))의 구성.
     private ArrayList<HashMap<Node, HashSet<Edge>>> circuitList;
-    private HashSet<Node> previousSparkedNode = new HashSet<>();
+    private HashSet<Node> previousSparkedNode = new HashSet<>();//여기도 방파제 모델 적용 지난 2회기의 흥분노드 저장
     private HashSet<Node> currentSparkedNode = new HashSet<>();
-    LinkedList<ArrayList<Boolean>> inputQueue;
+    private QueueDataStorage queueData;
     ArrayList<String> inputFileList;
     ArrayList<String> outputFileList;
 
@@ -42,14 +42,14 @@ public class Entity {
         this.outputFileList = outputFileList;
         mindCircuit =  Matcher(readNodeFromFile(inputFileList.get(0)), readEdgeFromFile(inputFileList.get(1)));
         circuitList = makeCircuitListFromMap(mindCircuit);
-        inputQueue = readInputQueue(inputFileList.get(2));
+        queueData = readInputQueue(inputFileList.get(2));
     }
 
     public HashMap<LevelData, HashMap<Node, HashSet<Edge>>> returnMindCircuit(){    // 프로젝트 완성시 삭제할것!
         return mindCircuit;
     }
     public ArrayList<HashMap<Node, HashSet<Edge>>> returnCircuitList() {return circuitList;}
-    public LinkedList<ArrayList<Boolean>> returnInputQueue(){ return inputQueue;}
+    public QueueDataStorage returnQueueDataStorage(){ return queueData;}
 
     public void visualiseCircuit(){
         int level = 0;
@@ -77,7 +77,6 @@ public class Entity {
         System.out.println();
         System.out.println();
     }
-
 
 
     private HashMap<LevelData, HashSet<Node>> readNodeFromFile(String inputFile){// Node 만 읽어 ArrayList 로 저장, level 과 묶어 map 을 만들어 반환.
@@ -249,8 +248,10 @@ public class Entity {
         return result;
     }
 
-    private LinkedList<ArrayList<Boolean>> readInputQueue(String inputFile) {
-        LinkedList<ArrayList<Boolean>> result = new LinkedList<>();
+    private QueueDataStorage readInputQueue(String inputFile) {
+        QueueDataStorage result;
+        LinkedList<ArrayList<Boolean>> inputDataList = new LinkedList<>();
+        ArrayList<Integer> inputNodeSerials = new ArrayList<>();
         ArrayList<String> splitInputData;
         String fileLine = "";
         try {
@@ -259,13 +260,23 @@ public class Entity {
             for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++) {  /// 파일에서 라인 읽어오기
                 if (fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할
                     continue;
+                if (fileLine.trim().startsWith("##")){
+                    fileLine = fileLine.replace("#", "");
+                    fileLine = fileLine.replace("[", "");
+                    splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
+                    for(String s : splitInputData){
+                        inputNodeSerials.add(Integer.valueOf(s.trim()));
+                    }
+                    continue;
+                }
                 fileLine = fileLine.replace("[", "");
                 splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
-                result.add(makeQueueFromSplitData(splitInputData));
+                inputDataList.add(makeQueueFromSplitData(splitInputData));
             }
         } catch (IOException ie){
             ie.printStackTrace();
         }
+        result = new QueueDataStorage(inputNodeSerials, inputDataList);
         return result;
     }
     private ArrayList<Boolean> makeQueueFromSplitData(ArrayList<String> data){
@@ -284,6 +295,27 @@ public class Entity {
         return result;
     }
 
+
+    public void runCircuit(){
+        HashMap<Integer, Boolean> input;
+
+        try{
+            input = queueData.getNextQueue();
+        }catch (EndOfQueueException eqe){
+            System.out.println("** 회기 종료 **");
+            return;
+        }
+
+
+    }
+
+    private Node findMatchingNode(Integer serial){
+        for(HashMap<Node, HashSet<Edge>> h : circuitList)
+            for(Node n : h.keySet())
+                if(n.matches(serial))
+                    return n;
+        return null;
+    }
 
 
 }
@@ -362,4 +394,48 @@ class InValidInputQueueFormatException extends RuntimeException{
     InValidInputQueueFormatException(){
         super("InValidInputQueueFormatException");
     }
+}
+class EndOfQueueException extends RuntimeException{
+    EndOfQueueException(String msg){
+        super(msg);
+    }
+    EndOfQueueException(){
+        super("EndOfQueueException");
+    }
+}
+
+/*-------------------------------3.2 회로 진행 데이터를 관리하는 클래스-------------------------------*/
+class QueueDataStorage{
+    private ArrayList<Integer> inputNodeSerials;
+    private LinkedList<ArrayList<Boolean>> inputQueue;
+    private int cycleCounter = 0;
+    private int totalInputCycle;
+    private Iterator<ArrayList<Boolean>> queueIter;
+
+    QueueDataStorage(ArrayList<Integer> inputNodeSerials, LinkedList<ArrayList<Boolean>> inputQueue){
+        this.inputNodeSerials = inputNodeSerials;
+        this.inputQueue = inputQueue;
+        totalInputCycle = inputQueue.size();
+        queueIter = this.inputQueue.iterator();
+    }
+    public HashMap<Integer, Boolean> getNextQueue() throws EndOfQueueException{
+        HashMap<Integer, Boolean> result = new HashMap<>();
+        if(queueIter.hasNext()){
+            ArrayList<Boolean> al = queueIter.next();
+            for(int i = 0; i < inputNodeSerials.size(); i++){
+                result.put(inputNodeSerials.get(i), al.get(i));
+            }
+            queueIter.remove();
+            cycleCounter ++;
+            return result;
+        }
+        throw new EndOfQueueException();
+    }
+
+    @Override
+    public String toString(){
+        return inputNodeSerials.toString() +"\n"+ inputQueue.toString();
+    }
+
+
 }
