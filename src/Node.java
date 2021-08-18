@@ -25,6 +25,7 @@ import java.util.*;
 abstract class Node {
     static int totalNodeQuantity = 0;
     int activeCounter = 0;
+    HashSet<Edge> edgeSet = null;
 
     final String NAME;
     public final int SERIAL_NUMBER;
@@ -32,7 +33,7 @@ abstract class Node {
     double criticalPoint;
     boolean active = false;
 
-    HashSet<Edge> edgeSet = new HashSet<>();
+
     private NodeData backupData = null; /*prevData 로 변수명 변경 검토*/    // 이상치 발견시 SentinelNode 가 접근하여 롤백
 
 
@@ -47,18 +48,22 @@ abstract class Node {
         totalNodeQuantity++;
     }
 
-    public void addEdge(Edge edge){
-        edgeSet.add(edge);
+    public void setEdge(HashSet<Edge> set){
+        this.edgeSet = set;
+    }
+    public HashSet<Edge> getEdge(){
+
+        return edgeSet;
     }
 
 
-    public boolean ignite(double sparkSum){
-        if(criticalPoint < sparkSum){
-            active = true;
-            activeCounter++;
-            return true;
-        }
-        return false;
+    public boolean askIgnite(double sparkSum){
+        return criticalPoint < sparkSum;
+    }
+
+    public void activate(){
+        active = true;
+        activeCounter++;
     }
 
     public void deActivate() {

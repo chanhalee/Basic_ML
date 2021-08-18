@@ -29,10 +29,15 @@ import java.util.logging.Level;
 /*-------------------------------1.개체의 기본형-------------------------------*/
 
 public class Entity {
+    static final int WAVE_SUSTAIN_TICK = 2;
+    static final double WAVE_REDUCE_COEFFICIENT = 0.6;
     private HashMap<LevelData, HashMap<Node, HashSet<Edge>>> mindCircuit; // (levelData -(Node - [Edge]))의 구성.
     private ArrayList<HashMap<Node, HashSet<Edge>>> circuitList;
-    private HashSet<Node> previousSparkedNode = new HashSet<>();//여기도 방파제 모델 적용 지난 2회기의 흥분노드 저장
+    private HashMap<Integer,SingleEntryMap<HashSet<Node>, HashSet<Edge>>> previousSparkedNode;//여기도 방파제 모델 적용. 지난 2회기의 흥분노드 저장
+    private HashMap<Integer, HashMap<Integer, Double>> stimulationDeposit;
     private HashSet<Node> currentSparkedNode = new HashSet<>();
+    private HashMap<Integer, HashSet<Integer>> cycleLog;
+    private HashMap<Integer, HashMap<Integer, HashSet<Integer>>> totalSimulationLog;
     private QueueDataStorage queueData;
     ArrayList<String> inputFileList;
     ArrayList<String> outputFileList;
@@ -43,6 +48,14 @@ public class Entity {
         mindCircuit =  Matcher(readNodeFromFile(inputFileList.get(0)), readEdgeFromFile(inputFileList.get(1)));
         circuitList = makeCircuitListFromMap(mindCircuit);
         queueData = readInputQueue(inputFileList.get(2));
+        previousSparkedNode = new HashMap<>();
+        for(int i = 1; i <= WAVE_SUSTAIN_TICK; i++){
+            previousSparkedNode.put((-i), new SingleEntryMap<HashSet<Node>, HashSet<Edge>>(new HashSet<Node>(), new HashSet<Edge>()));
+        }
+        stimulationDeposit = new HashMap<>();
+        for(int i = 1; i <= WAVE_SUSTAIN_TICK; i++){
+            stimulationDeposit.put(-i, new HashMap<>());
+        }
     }
 
     public HashMap<LevelData, HashMap<Node, HashSet<Edge>>> returnMindCircuit(){    // 프로젝트 완성시 삭제할것!
@@ -122,7 +135,7 @@ public class Entity {
         int nodeFormat = Integer.parseInt(data.get(0).trim());
         try {
             node = switch (nodeFormat) {
-                case InputNodeInter.NODE_FORMAT -> new InputNode(data.get(1).trim(), Integer.parseInt(data.get(2).trim()), Double.parseDouble(data.get(3).trim()), Boolean.parseBoolean(data.get(4).trim()));
+                case InputNodeInter.NODE_FORMAT -> new InputNode(data.get(1).trim(), Integer.parseInt(data.get(2).trim()), Double.parseDouble(data.get(3).trim()));
                 case ProcessNodeInter.NODE_FORMAT -> new ProcessNode(data.get(1).trim(), Integer.parseInt(data.get(2).trim()), Double.parseDouble(data.get(3).trim()));
                 case OutputNodeInter.NODE_FORMAT -> new OutputNode(data.get(1).trim(), Integer.parseInt(data.get(2).trim()), Double.parseDouble(data.get(3).trim()));
                 default -> throw new InValidNodeFormatException("정의되지 않은 NODE_FORMAT 입력. 값: " + nodeFormat);
@@ -203,6 +216,7 @@ public class Entity {
             for(Integer i : edgeMap.keySet()){
                 if(n.SERIAL_NUMBER == i){
                     NodeNEdgeMap.replace(n, edgeMap.get(i));
+                    n.setEdge(edgeMap.get(i));
                     //실행속도를 높이기 위해 아래 두줄을 만들었었는데 foreach문 안에서 foreach의 소스를 건드리는 것이 예외를 발생시킴!
                     // 해당 매칭 함수에서 상당한 시간이 소모될 것으로 예상되어 향후 개선이 필요함.
 /*                    edgeMap.remove(i);
@@ -296,14 +310,50 @@ public class Entity {
     }
 
 
-    public void runCircuit(){
+    public void runCircuit(){       //1회기 실행.
         HashMap<Integer, Boolean> input;
+        HashMap<Integer, Double> nextWave;
+        Node tempNode;
+        HashSet<Edge> ignitedEdgeSet;
+        HashSet<Node> stimulatedNodeNext = new HashSet<>();
+        int cycleCounter = 0;
+        while(true) {
+            try {
+                cycleLog.put(0, new HashSet<Integer>());
+                input = queueData.getNextQueue();
+                for (Integer i : input.keySet()) {
+                    tempNode = findMatchingNode(i);
+                    assert tempNode != null;
+                    if (tempNode.askIgnite(input.get(i) ? 1 : 0)) {
+                        currentSparkedNode.add(tempNode);
+                        cycleLog.get(0).add(tempNode.SERIAL_NUMBER);
+                    }
+                }
+                ignitedEdgeSet = edgeOfIgnited(currentSparkedNode);
+                nextWave = sumOfWeighInOrderOfDestNode(ignitedEdgeSet);
+            } catch (EndOfQueueException eqe) {
+                System.out.println("** 모든 회기 종료 **");
+                return;
+            }
+            while (!currentSparkedNode.isEmpty()) {
+                int tickCounter = 1;
+                cycleLog.put(tickCounter, new HashSet<Integer>());
+                tickCounter++;
+                //previousSparkedNode.currentSparkedNode
+                for (Integer i : nextWave.keySet()) {
+                    tempNode = findMatchingNode(i);
+                    assert tempNode != null;
 
-        try{
-            input = queueData.getNextQueue();
-        }catch (EndOfQueueException eqe){
-            System.out.println("** 회기 종료 **");
-            return;
+                    if (tempNode.askIgnite(nextWave.get(i) + sumOfStimulationInDeposit(i))) { // true 일경우 다음 노드 흥분!
+                        tempNode.activate();
+                        cycleLog.get(tickCounter).add(tempNode.SERIAL_NUMBER);
+                        stimulatedNodeNext.add(tempNode);
+                    }
+                }
+                postTickProcess(ignitedEdgeSet, stimulatedNodeNext);
+            }
+            totalSimulationLog.put(cycleCounter, cycleLog);
+            cycleCounter++;
         }
 
 
@@ -315,6 +365,107 @@ public class Entity {
                 if(n.matches(serial))
                     return n;
         return null;
+    }
+
+    private HashMap<Integer, Double> sumOfWeighInOrderOfDestNode(HashSet<Edge> ignitedEdgeSet){
+
+        HashMap<Integer, Double> result = new HashMap<>();
+        for(Edge e : ignitedEdgeSet){
+            if(result.containsKey(e.getDestination()))
+                result.replace(e.getDestination(),result.get(e.getDestination()) + e.getWeight());
+            else
+                result.put(e.getDestination(), e.getWeight());
+        }
+        return result;
+    }
+
+    private HashSet<Edge> edgeOfIgnited(HashSet<Node> currentSparkedNode){
+        HashSet<Edge> result = new HashSet<>();
+        for(Node n :currentSparkedNode) {
+            if(n instanceof OutputNodeInter)
+                continue;
+            result.addAll(n.getEdge());
+        }
+        for(Edge e : result){
+            if(! e.checkVital())
+                result.remove(e);
+        }
+        return result;
+    }
+
+    private double sumOfStimulationInDeposit(Integer serial){
+        double result = 0;
+        for(int i = (-WAVE_SUSTAIN_TICK); i <= -1; i++){
+            result += stimulationDeposit.get(i).getOrDefault(serial, (double) 0);
+        }
+        return result;
+    }
+
+    private void postTickProcess(HashSet<Edge> ignitedEdgeSet, HashSet<Node> stimulatedNodeNext){
+        HashMap<Integer, Double> currentTickDeposit = sumOfWeighInOrderOfDestNode(ignitedEdgeSet);
+        HashMap<Integer, Double> intDoubleMap = new HashMap<>();
+
+        // 루프 노드의 카운더 조정 과정
+        for(Edge e : ignitedEdgeSet){
+            e.activated();
+        }
+
+        // 이전  WAVE_SUSTAIN_TICK 틱의 기간 동안 활성화된 엣지들 중 현재 흥분 노드를 도착점으로 하는 엣지들에 대한 가중치 보정 과정
+        for(int i = -WAVE_SUSTAIN_TICK; i <= -1; i++){
+            for(Edge e : previousSparkedNode.get(i).item2){
+                for(Node n : currentSparkedNode){
+                    if(n.matches(e.getDestination())){
+                        e.weightAdjustFireTogether();
+                    }
+                }
+            }
+        }
+
+        // previousSparkedNode 업데이트 과정
+        previousSparkedNode.remove(-WAVE_SUSTAIN_TICK);
+
+        for(int i = (-WAVE_SUSTAIN_TICK +1); i <= -1; i++){
+            previousSparkedNode.put(i-1, previousSparkedNode.get(i));
+        }
+        SingleEntryMap<HashSet<Node>, HashSet<Edge>> tempMap = new SingleEntryMap<>(currentSparkedNode, ignitedEdgeSet);
+        previousSparkedNode.put(-1, tempMap);
+        currentSparkedNode = stimulatedNodeNext;    // 다음에 사용될 소스 최신화
+
+
+
+
+        // 반감주기 다다른 자극들에 대해 계수를 곱해 반감주기 갱신하고 다른 위치에 저장.
+        if(! stimulationDeposit.get(-WAVE_SUSTAIN_TICK).isEmpty()){
+            intDoubleMap = stimulationDeposit.get(-WAVE_SUSTAIN_TICK);
+            for(Integer i : intDoubleMap.keySet()){
+                intDoubleMap.replace(i, intDoubleMap.get(i) * WAVE_REDUCE_COEFFICIENT);
+            }
+        }
+        // currentTick 에 있는 자극 들 중 이번 틱에 유효타(노드를 흥분시킨 자극)를 날린 자극은 제거
+
+        // stimulationDeposit 업데이트 과정.
+        for(int i = (-WAVE_SUSTAIN_TICK +1); i <= -1; i++){
+            stimulationDeposit.put(i-1, stimulationDeposit.get(i));
+
+            for(Node n : stimulatedNodeNext){
+                stimulationDeposit.get(i).remove(n.SERIAL_NUMBER);
+            }
+        }
+
+        //
+        for(Integer i : currentTickDeposit.keySet()){
+            if(intDoubleMap.containsKey(i)){
+                intDoubleMap.replace(i, intDoubleMap.get(i) + currentTickDeposit.get(i));
+            }
+            else
+                intDoubleMap.put(i, currentTickDeposit.get(i));
+        }
+        // Deposit 에 있는 자극 들 중 이번 틱에 흥분한 노드가 목적지인 자극들은 제거( ReadMe-흥분 규칙-방파제 모델 참고)
+        for(Node n : stimulatedNodeNext){
+            intDoubleMap.remove(n.SERIAL_NUMBER);
+        }
+        stimulationDeposit.put(-1, intDoubleMap);
+
     }
 
 
@@ -382,6 +533,17 @@ class LevelData{
 
 }
 
+/*-------------------------------2.1.SingleEntryMap-------------------------------*/
+class SingleEntryMap<T, S>{
+    public T item1;
+    public S item2;
+    SingleEntryMap(T item1, S item2){
+        this.item1 = item1;
+        this.item2 = item2;
+    }
+}
+
+
 
 /*-------------------------------3.* 개체의 동작에 필요한 클래스-------------------------------*/
 
@@ -436,6 +598,7 @@ class QueueDataStorage{
     public String toString(){
         return inputNodeSerials.toString() +"\n"+ inputQueue.toString();
     }
-
-
 }
+
+
+/*-------------------------------3.2 회로 진행 데이터를 관리하는 클래스-------------------------------*/

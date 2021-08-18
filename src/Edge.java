@@ -22,7 +22,7 @@ public class Edge implements EdgeInter{
     public boolean checkVital(){
         return true;
     }
-    public void Activated(){    // 속한 노드가 흥분했을 경우 실행
+    public void activated(){    // 속한 노드가 흥분했을 경우 실행
         activeCounter++;
     }
     void weightAdjustFireTogether(){
