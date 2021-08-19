@@ -341,7 +341,6 @@ public class Entity {
             while (!currentSparkedNode.isEmpty()) {
                 ignitedEdgeSet = edgeOfIgnited(currentSparkedNode);
                 nextWave = sumOfWeighInOrderOfDestNode(ignitedEdgeSet);
-                System.out.println(currentSparkedNode);
                 cycleLog.put(tickCounter, new HashSet<Integer>());
                 //previousSparkedNode.currentSparkedNode
                 for (Integer i : nextWave.keySet()) {
@@ -361,6 +360,7 @@ public class Entity {
                 stimulatedNodeNext = new HashSet<>();
                 tickCounter++;
             }
+            DisplayData.displaySingleCycle(circuitList, cycleLog);
             totalSimulationLog.put(cycleCounter, cycleLog);
             cycleCounter++;
         }

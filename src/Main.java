@@ -16,9 +16,7 @@ public class Main {
         outputFileList.add("testOutputQueue.txt");
 
         Entity entity = new Entity(inputFileList, outputFileList);
-        entity.visualiseCircuit();
-        System.out.println(entity.returnQueueDataStorage());
         entity.runCircuit();
-        System.out.println(entity.returnTotalSimulationLog());
+
     }
 }
