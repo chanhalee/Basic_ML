@@ -43,6 +43,9 @@ public class Edge implements EdgeInter{
     public int getDestination(){
         return DESTINATION_NODE_SERIAL;
     }
+    public void resetActiveCounter(){
+        this.activeCounter = 0;
+    }
     @Override
     public int hashCode() {
         return Integer.parseInt(String.valueOf(START_NODE_SERIAL)+ String.valueOf(DESTINATION_NODE_SERIAL));

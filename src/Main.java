@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
@@ -15,8 +16,8 @@ public class Main {
         outputFileList.add("testOutputEdge.txt");
         outputFileList.add("testOutputQueue.txt");
 
-        Entity entity = new Entity(inputFileList, outputFileList);
-        entity.runCircuit();
-
+        //Entity entity = new Entity(inputFileList, outputFileList);
+        //entity.runCircuit();
+        Entity.makeInputFiles();
     }
 }
