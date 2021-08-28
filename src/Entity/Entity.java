@@ -1,9 +1,9 @@
-
+package Entity;
 /* ---------------------------------------------
 ## 목차
 1. 개체의 기본형
 2.* 개체에 관련된 데이터 저장소
-2.1. LevelData
+2.1. Entity.LevelData
 3.* 개체의 동작에 필요한 클래스
 3.1.파일 입출력 관련 함수
 
@@ -22,17 +22,21 @@
 //
 //
 
+import Edge.*;
+import Edge.Exceptions.InValidEdgeFormatException;
+import Edge.Interfaces.EdgeInter;
+import Node.*;
 import java.util.*;
 import java.io.*;
-import static java.lang.System.exit;
-import java.util.logging.Level;
 /*-------------------------------1.개체의 기본형-------------------------------*/
 
 public class Entity {
     static final int WAVE_SUSTAIN_TICK = 2;
     static final double WAVE_REDUCE_COEFFICIENT = 0.6;
-    private HashMap<LevelData, HashMap<Node, HashSet<Edge>>> mindCircuit; // (levelData -(Node - [Edge]))의 구성.
+    private HashMap<LevelData, HashMap<Node, HashSet<Edge>>> mindCircuit; // (levelData -(Node.Node - [Edge.Edge]))의 구성.
     private ArrayList<HashMap<Node, HashSet<Edge>>> circuitList;
+    private HashMap<Integer, Double> serialNCriticalSet;
+    private HashMap<Integer, HashMap<Integer, SingleEntryMap<Double, Double>>> stimulationSumLogInACycle;
     private HashMap<Integer,SingleEntryMap<HashSet<Node>, HashSet<Edge>>> previousSparkedNode;//여기도 방파제 모델 적용. 지난 2회기의 흥분노드 저장
     private HashMap<Integer, HashMap<Integer, Double>> stimulationDeposit;
     private HashSet<Node> currentSparkedNode = new HashSet<>();
@@ -42,31 +46,24 @@ public class Entity {
     ArrayList<String> inputFileList;
     ArrayList<String> outputFileList;
 
-    Entity(ArrayList<String> inputFileList, ArrayList<String> outputFileList){
+    public Entity(ArrayList<String> inputFileList, ArrayList<String> outputFileList){
         this.inputFileList = inputFileList;
         this.outputFileList = outputFileList;
         mindCircuit =  Matcher(readNodeFromFile(inputFileList.get(0)), readEdgeFromFile(inputFileList.get(1)));
         circuitList = makeCircuitListFromMap(mindCircuit);
         queueData = readInputQueue(inputFileList.get(2));
+        serialNCriticalSet = makeSerialNCriticalSet();
         previousSparkedNode = new HashMap<>();
         for(int i = 1; i <= WAVE_SUSTAIN_TICK; i++){
             previousSparkedNode.put((-i), new SingleEntryMap<HashSet<Node>, HashSet<Edge>>(new HashSet<Node>(), new HashSet<Edge>()));
         }
         stimulationDeposit = new HashMap<>();
-        for(int i = 1; i <= WAVE_SUSTAIN_TICK; i++){
-            stimulationDeposit.put(-i, new HashMap<>());
+        for (int i = 0; i <= WAVE_SUSTAIN_TICK; i++) {
+            stimulationDeposit.put(-i, makeDepositForAll());
         }
-    }
 
-    public HashMap<LevelData, HashMap<Node, HashSet<Edge>>> returnMindCircuit(){    // 프로젝트 완성시 삭제할것!
-        return mindCircuit;
     }
-    public ArrayList<HashMap<Node, HashSet<Edge>>> returnCircuitList() {return circuitList;}
-    public QueueDataStorage returnQueueDataStorage(){ return queueData;}
-    public HashMap<Integer, HashMap<Integer, HashSet<Integer>>> returnTotalSimulationLog(){
-        return totalSimulationLog;
-    }
-
+/*
     public void visualiseCircuit(){
         int level = 0;
         System.out.println("회로 도식화");
@@ -74,17 +71,17 @@ public class Entity {
             System.out.println("빈 회로!");
             return;
         }
-        for(HashMap<Node, HashSet<Edge>> nhm : circuitList){
+        for(HashMap<Node.Node, HashSet<Edge.Edge>> nhm : circuitList){
             System.out.println("Level: " + level++);
             if(nhm == null)
                 continue;
-            for(Node n: nhm.keySet()){
+            for(Node.Node n: nhm.keySet()){
                 System.out.print("\t\t ");
                 System.out.println(n);
-                HashSet<Edge> ehs = nhm.get(n);
+                HashSet<Edge.Edge> ehs = nhm.get(n);
                 if(ehs == null)
                     continue;
-                for(Edge e: ehs){
+                for(Edge.Edge e: ehs){
                     System.out.print("\t\t\t\t\t\t\t\t\t\t\t  ");
                     System.out.println(e);
                 }
@@ -92,18 +89,17 @@ public class Entity {
         }
         System.out.println();
         System.out.println();
-    }
+    }*/
 
 
-    private HashMap<LevelData, HashSet<Node>> readNodeFromFile(String inputFile){// Node 만 읽어 ArrayList 로 저장, level 과 묶어 map 을 만들어 반환.
+    private HashMap<LevelData, HashSet<Node>> readNodeFromFile(String inputFile){// Node.Node 만 읽어 ArrayList 로 저장, level 과 묶어 map 을 만들어 반환.
         HashMap<LevelData, HashSet<Node>> result = new HashMap<>();
         LevelData levelData = null;
         HashSet<Node> nodeData = null;
         String fileLine = "";
         ArrayList<String> splitInputData = null;
         try {
-            FileReader fileInput = new FileReader(inputFile);
-            BufferedReader inputBuffer = new BufferedReader(fileInput);
+            BufferedReader inputBuffer = new BufferedReader(new FileReader(new File(inputFile)));
             for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++){  /// 파일에서 라인 읽어오기
                 if(fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할
                     continue;
@@ -189,13 +185,13 @@ public class Entity {
                 else if (data.size() == 4)
                     edge = new Edge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)));
                 else
-                    throw new InValidEdgeFormatException("정의되지 않은 Edge 생성자 매개변수 개수 값: " + data.size());
+                    throw new InValidEdgeFormatException("정의되지 않은 Edge.Edge 생성자 매개변수 개수 값: " + data.size());
             }else if(edgeFormat == 2){
                 if(data.size() == 6)
                     edge = new LoopEdge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)), Double.parseDouble(data.get(4)), Integer.parseInt(data.get(5)));
                 else if(data.size() == 5)
                     edge = new LoopEdge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)), Integer.parseInt(data.get(4)));
-                else throw new InValidEdgeFormatException("정의되지 않은 LoopEdge 생성자 매개변수 개수 값: " + data.size());
+                else throw new InValidEdgeFormatException("정의되지 않은 Edge.LoopEdge 생성자 매개변수 개수 값: " + data.size());
             }
             else throw new InValidEdgeFormatException("정의되지 않은 EDGE_FORMAT 입력. 값: " + edgeFormat);
         } catch(InValidEdgeFormatException ee){
@@ -314,6 +310,51 @@ public class Entity {
         }
         return result;
     }
+    private HashMap<Integer, Double> makeSerialNCriticalSet(){
+        HashMap<Integer, Double> result = new HashMap<>();
+        for (HashMap<Node, HashSet<Edge>> nm: circuitList){
+            for(Node n: nm.keySet()){
+                result.put(n.SERIAL_NUMBER, n.getCriticalPoint());
+            }
+        }
+        return result;
+    }
+    private HashMap<Integer, Double> makeDepositForAll(){
+        if(serialNCriticalSet == null){
+            System.out.println("serialNCriticalSet 없음. makeSerialNCriticalSet 메서드 실행이 선행되어야 함.");
+            throw new RuntimeException("makeDepositForAll()에서 발생!");
+        }
+        HashMap<Integer, Double> result = new HashMap<>();
+        serialNCriticalSet.keySet().forEach(integer -> result.put(integer, (double)0));
+        return result;
+    }
+    private HashMap<Integer, SingleEntryMap<Double, Double>> makeStimulationSumLogForm(){
+        if(serialNCriticalSet == null){
+            System.out.println("serialNCriticalSet 없음!!! makeSerialNCriticalSet 메서드 실행이 선행되어야 함.");
+            throw new RuntimeException("makeStimulationSumLogForm()에서 발생!");
+        }
+        HashMap<Integer, SingleEntryMap<Double, Double>> result = new HashMap<>();
+        for(Integer i: serialNCriticalSet.keySet()){
+            result.put(i, new SingleEntryMap<Double, Double>(serialNCriticalSet.get(i), Double.MIN_VALUE));
+        }
+        return result;
+    }
+    private HashMap<Integer, SingleEntryMap<Double, Double>> makeStimulationSumLogForm(double init){
+        if(serialNCriticalSet == null){
+            System.out.println("serialNCriticalSet 없음!!! makeSerialNCriticalSet 메서드 실행이 선행되어야 함.");
+            throw new RuntimeException("makeStimulationSumLogForm()에서 발생!");
+        }
+        HashMap<Integer, SingleEntryMap<Double, Double>> result = new HashMap<>();
+        for(Integer i: serialNCriticalSet.keySet()){
+            result.put(i, new SingleEntryMap<Double, Double>(serialNCriticalSet.get(i), init));
+        }
+        return result;
+    }
+    private void annihilateBalance(Integer serial){
+        for(int i = 0; i <= WAVE_SUSTAIN_TICK; i++){
+            stimulationDeposit.get(-i).replace(serial, (double)0);
+        }
+    }
 
 
     public void runCircuit(){
@@ -321,14 +362,19 @@ public class Entity {
         HashMap<Integer, Double> nextWave;
         Node tempNode;
         HashSet<Edge> ignitedEdgeSet;
-        HashSet<Node> stimulatedNodeNext = new HashSet<>();
+        HashSet<Node> stimulatedNodeNext;
+        Double tempDouble;
         int cycleCounter = 0;
         while(true) {
             try {
+                stimulatedNodeNext = new HashSet<>();
+                stimulationSumLogInACycle = new HashMap<>();
                 cycleLog = new HashMap<>();
+                stimulationSumLogInACycle.put(0, makeStimulationSumLogForm(0));
                 cycleLog.put(0, new HashSet<Integer>());
                 input = queueData.getNextQueue();
                 for (Integer i : input.keySet()) {
+                    stimulationSumLogInACycle.get(0).get(i).setItem2((double)(input.get(i) ? 1 : 0));
                     tempNode = findMatchingNode(i);
                     assert tempNode != null;
                     if (tempNode.askIgnite(input.get(i) ? 1 : 0)) {
@@ -345,17 +391,23 @@ public class Entity {
                 ignitedEdgeSet = edgeOfIgnited(currentSparkedNode);
                 nextWave = sumOfWeighInOrderOfDestNode(ignitedEdgeSet);
                 cycleLog.put(tickCounter, new HashSet<Integer>());
-                //previousSparkedNode.currentSparkedNode
+                HashMap<Integer, SingleEntryMap<Double, Double>> formForTick = makeStimulationSumLogForm();
+                stimulationSumLogInACycle.put(tickCounter, formForTick);
                 for (Integer i : nextWave.keySet()) {
                     tempNode = findMatchingNode(i);
                     assert tempNode != null;
-
-                    if (tempNode.askIgnite(nextWave.get(i) + sumOfStimulationInDeposit(i))) { // true 일경우 다음 노드 흥분!
+                    stimulationDeposit.get(0).put(i, nextWave.get(i));
+                    if (tempNode.askIgnite(tempDouble = sumOfStimulationInDeposit(i))) { // true 일경우 다음 노드 흥분! , Deposit 잔고 소멸.
+                        stimulationSumLogInACycle.get(tickCounter).get(i).setItem2(tempDouble);
+                        annihilateBalance(i);
                         tempNode.activate();
                         cycleLog.get(tickCounter).add(tempNode.SERIAL_NUMBER);
                         stimulatedNodeNext.add(tempNode);
                     }
                 }
+                serialNCriticalSet.keySet().forEach(
+                        (integer -> {if(formForTick.get(integer).item2==Double.MIN_VALUE)
+                            formForTick.get(integer).setItem2(sumOfStimulationInDeposit(integer));}));
                 postTickProcess(ignitedEdgeSet, stimulatedNodeNext);
                 for(Node n : stimulatedNodeNext)
                     n.deActivate();
@@ -363,7 +415,7 @@ public class Entity {
                 stimulatedNodeNext = new HashSet<>();
                 tickCounter++;
             }
-            DisplayData.displaySingleCycle(circuitList, cycleLog);
+            DisplayData.displaySingleCycle(circuitList, cycleLog, stimulationSumLogInACycle);
             totalSimulationLog.put(cycleCounter, cycleLog);
             postCycleProcess();
             cycleCounter++;
@@ -408,7 +460,7 @@ public class Entity {
 
     private double sumOfStimulationInDeposit(Integer serial){
         double result = 0;
-        for(int i = (-WAVE_SUSTAIN_TICK); i <= -1; i++){
+        for(int i = (-WAVE_SUSTAIN_TICK); i <= 0; i++){
             result += stimulationDeposit.get(i).getOrDefault(serial, (double) 0);
         }
         return result;
@@ -459,55 +511,54 @@ public class Entity {
         if(! stimulationDeposit.get(-WAVE_SUSTAIN_TICK).isEmpty()){
             intDoubleMap = stimulationDeposit.get(-WAVE_SUSTAIN_TICK);
             for(Integer i : intDoubleMap.keySet()){
-                intDoubleMap.replace(i, intDoubleMap.get(i) * WAVE_REDUCE_COEFFICIENT);
+                stimulationDeposit.get(0).replace(i, stimulationDeposit.get(0).get(i)+intDoubleMap.get(i) * WAVE_REDUCE_COEFFICIENT);
             }
         }
-        // currentTick 에 있는 자극 들 중 이번 틱에 유효타(노드를 흥분시킨 자극)를 날린 자극은 제거
 
         // stimulationDeposit 업데이트 과정.
-        for(int i = (-WAVE_SUSTAIN_TICK +1); i <= -1; i++){
-            stimulationDeposit.put(i-1, stimulationDeposit.get(i));
+        for(int i = (-WAVE_SUSTAIN_TICK) + 1; i <= 0; i++){
+            stimulationDeposit.replace(i-1, stimulationDeposit.get(i));
 
             for(Node n : stimulatedNodeNext){
                 stimulationDeposit.get(i).remove(n.SERIAL_NUMBER);
             }
         }
-
-        //
-        for(Integer i : currentTickDeposit.keySet()){
-            if(intDoubleMap.containsKey(i)){
-                intDoubleMap.replace(i, intDoubleMap.get(i) + currentTickDeposit.get(i));
-            } else
-                intDoubleMap.put(i, currentTickDeposit.get(i));
-        }
-        // Deposit 에 있는 자극 들 중 이번 틱에 흥분한 노드가 목적지인 자극들은 제거( ReadMe-흥분 규칙-방파제 모델 참고)
-        for(Node n : stimulatedNodeNext){
-            intDoubleMap.remove(n.SERIAL_NUMBER);
-        }
-        stimulationDeposit.put(-1, intDoubleMap);
+        stimulationDeposit.put(0, makeDepositForAll());
 
     }
     private void postCycleProcess(){
         for(HashMap<Node, HashSet<Edge>> level: circuitList){
             for(Node n : level.keySet()){
                 n.deActivate();
-                for(Edge e: level.get(n)){
-                    e.resetActiveCounter();
+                if(level.get(n) != null) {
+                    for (Edge e : level.get(n)) {
+                        e.resetActiveCounter();
+                    }
                 }
             }
         }
+        previousSparkedNode = new HashMap<>();
+        for(int i = 1; i <= WAVE_SUSTAIN_TICK; i++){
+            previousSparkedNode.put((-i), new SingleEntryMap<HashSet<Node>, HashSet<Edge>>(new HashSet<Node>(), new HashSet<Edge>()));
+        }
+        stimulationDeposit = new HashMap<>();
+        for (int i = 0; i <= WAVE_SUSTAIN_TICK; i++) {
+            stimulationDeposit.put(-i, makeDepositForAll());
+        }
+        currentSparkedNode = new HashSet<>();
+
     }
 
 
-    static void makeInputFiles(){
+    public static void makeInputFiles(){
         Scanner userInput = new Scanner(System.in);
         String fileName;
         String tempString;
         int fileFormat;
         while(true) {
             System.out.println(" *작성하실 파일의 내용을 알려주세요* ");
-            System.out.println("1. Node");
-            System.out.println("2. Edge");
+            System.out.println("1. Node.Node");
+            System.out.println("2. Edge.Edge");
             System.out.println("3. InputData");
             System.out.print("파일 내용의 번호를 입력하세요: ");
             tempString = userInput.nextLine();
@@ -545,7 +596,7 @@ public class Entity {
             System.out.println("*** <노드 입력형식 안내> ***");
             System.out.println("0. \t순서:\t <1. 레벨 / 2. 레벨에 속한 노드> 순으로 형식에 맞추어 입력");
             System.out.println("1-0. 레벨 형식:\t 1. 속한 노드들의 포멧 / 2. 레벨 / 3. 레벨명");
-            System.out.println("1-1. 노드 포멧:\t " + "InputNode: " + InputNodeInter.NODE_FORMAT + "ProcessNode: " + ProcessNodeInter.NODE_FORMAT + "OutputNode: " + OutputNodeInter.NODE_FORMAT);
+            System.out.println("1-1. 노드 포멧:\t " + "Node.InputNode: " + InputNodeInter.NODE_FORMAT + "Node.ProcessNode: " + ProcessNodeInter.NODE_FORMAT + "Node.OutputNode: " + OutputNodeInter.NODE_FORMAT);
             System.out.println("1-2. 레벨 형식:\t 1부터 시작하는 연속된 자연수를 사용할 것을 권장. / ");
             System.out.println("1-3. 레벨명 형식:\t 자유형식");
             System.out.println();
@@ -554,7 +605,7 @@ public class Entity {
             System.out.println("2-2. 노드명 형식:\t 자유형식");
             System.out.println("2-3. 시리얼 형식:\t 5자리 정수  / 중복될 경우 곤란함. (중복시 먼저입력된 내용 무시됨.)");
             System.out.println("\t\t\t 시리얼 권장형식:\t (노드형식 * 10000) + (level * 100) + (레벨내 순번 or 자율)");
-            System.out.println("2-4. 흥분역치 형식:\t 0보다 큰 실수 / InputNode 의 경우 흥분역치는 1로 고정되어 입력받지 않음.");
+            System.out.println("2-4. 흥분역치 형식:\t 0보다 큰 실수 / Node.InputNode 의 경우 흥분역치는 1로 고정되어 입력받지 않음.");
             System.out.println("\t\t\t 흥분역치 권장사항:\t 각 레벨의 흥분역치는 통일할 것을 권장.");
             System.out.println();
             System.out.println("-입력 시작-");
@@ -593,7 +644,7 @@ public class Entity {
             fileBuffer.write("$$");
             fileBuffer.close();
         } catch(IOException ie){
-            System.out.println("Node 파일 작성과정에서 오류발생");
+            System.out.println("Node.Node 파일 작성과정에서 오류발생");
         }
     }
     private static void makeEdgeInputFile(String fileName) {
@@ -606,7 +657,7 @@ public class Entity {
             int edgeCount;
             System.out.println("*** <엣지 입력형식 안내> ***");
             System.out.println("1-0. 엣지 형식:\t 1. 엣지포멧 / 2. 출발노드시리얼 / 3. 도착노드시리얼 / 4. 가중치 / 5. 가중치 변화량(옵션) / 6. 루프 횟수 (루프노드일 경우에만)");
-            System.out.println("1-1. 엣지 포멧:\t " + "NoneLoopEdge: " + EdgeInter.NONE_LOOP_EDGE + "LoopEdge: " + EdgeInter.LOOP_EDGE);
+            System.out.println("1-1. 엣지 포멧:\t " + "NoneLoopEdge: " + EdgeInter.NONE_LOOP_EDGE + "Edge.LoopEdge: " + EdgeInter.LOOP_EDGE);
             System.out.println("1-4. 가중치 규칙:\t 출발노드가 도착노드의 흥분을 억제하는 역할을 할 경우 음의 실수, 흥분을 촉진시킬 경우 양의 실수");
             System.out.println("1-5. 가중치 변화량:\t 작성하지 않을 경우 엔터로 넘어갈 것. 작성하지 않을 경우 가중치에 프로그램 내에 미리 설정된 상수를 곱해 산출");
             System.out.println("1-6. 루프 횟수:\t 루프엣지는 회로의 무한가동을 막기 위해 입력한 횟수 를 넘어 활성화될 수 없음.(각 회기 시작시 카운트는 초기화)");
@@ -968,7 +1019,7 @@ public class Entity {
 
 /*-------------------------------2.*개체에 관련된 데이터 저장소-------------------------------*/
 
-/*-------------------------------2.1.LevelData-------------------------------*/
+/*-------------------------------2.1.Entity.LevelData-------------------------------*/
 
 class LevelData{
     private final int NODE_FORMAT;
@@ -1005,13 +1056,19 @@ class LevelData{
 
 }
 
-/*-------------------------------2.1.SingleEntryMap-------------------------------*/
+/*-------------------------------2.1.Entity.SingleEntryMap-------------------------------*/
 class SingleEntryMap<T, S>{
     public T item1;
     public S item2;
     SingleEntryMap(T item1, S item2){
         this.item1 = item1;
         this.item2 = item2;
+    }
+    public void setItem1(T value){
+        item1 = value;
+    }
+    public void setItem2(S value){
+        item2 = value;
     }
 }
 
@@ -1026,7 +1083,7 @@ class InValidInputQueueFormatException extends RuntimeException{
         super(msg);
     }
     InValidInputQueueFormatException(){
-        super("InValidInputQueueFormatException");
+        super("Entity.InValidInputQueueFormatException");
     }
 }
 class EndOfQueueException extends RuntimeException{
@@ -1034,7 +1091,7 @@ class EndOfQueueException extends RuntimeException{
         super(msg);
     }
     EndOfQueueException(){
-        super("EndOfQueueException");
+        super("Entity.EndOfQueueException");
     }
 }
 
@@ -1073,4 +1130,3 @@ class QueueDataStorage{
 }
 
 
-/*-------------------------------3.2 회로 진행 데이터를 관리하는 클래스-------------------------------*/

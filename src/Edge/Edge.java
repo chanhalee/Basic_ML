@@ -1,7 +1,9 @@
-import java.util.*;
+package Edge;
 
 
-public class Edge implements EdgeInter{
+import Edge.Interfaces.EdgeInter;
+
+public class Edge implements EdgeInter {
     final double WEIGHT_COEFFICIENT = 0.05d;
     final int START_NODE_SERIAL;
     final int DESTINATION_NODE_SERIAL;
@@ -9,11 +11,11 @@ public class Edge implements EdgeInter{
     double weight;
     double weightDelta;
 
-    Edge(int start, int dest, double weight, double weighDelta){
+    public Edge(int start, int dest, double weight, double weighDelta){
         this(start, dest, weight);
         this.weightDelta = weighDelta;
     }
-    Edge(int start, int dest, double weight){
+    public Edge(int start, int dest, double weight){
         this.START_NODE_SERIAL = start;
         this.DESTINATION_NODE_SERIAL = dest;
         this.weight = weight;
@@ -25,7 +27,7 @@ public class Edge implements EdgeInter{
     public void activated(){    // 속한 노드가 흥분했을 경우 실행
         activeCounter++;
     }
-    void weightAdjustFireTogether(){
+    public void weightAdjustFireTogether(){
         weight += weightDelta;
     }
     void weightAdjustFireTogether(double coefficient){
@@ -37,7 +39,7 @@ public class Edge implements EdgeInter{
     void weightAdjustDestNumb(double coefficient){
         weight -= weightDelta * coefficient;
     }
-    double getWeight(){
+    public double getWeight(){
         return weight;
     }
     public int getDestination(){
@@ -65,18 +67,5 @@ public class Edge implements EdgeInter{
     }
 }
 
-interface EdgeInter{
-    final int NONE_LOOP_EDGE = 1;
-    final int LOOP_EDGE = 2;
-}
 
 
-
-class InValidEdgeFormatException extends RuntimeException{
-    InValidEdgeFormatException(String msg){
-        super(msg);
-    }
-    InValidEdgeFormatException(){
-        super("InValidEdgeFormatException");
-    }
-}

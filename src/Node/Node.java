@@ -1,9 +1,9 @@
-
+package Node;
 /* ---------------------------------------------
 ## 목차
 1. 노드의 기본형
 2. 노드에 관련된 데이터 저장소
-2.1. NodeData
+2.1. Node.NodeData
 2.1.1. IdentityData
 2.2.
 2.I. 데이터 저장소와 관련된 인터페이스
@@ -19,10 +19,11 @@ E. 노드에 관련된 사용자 정의 예외
 //
 //
 
+import Edge.Edge;
 import java.util.*;
 /*-------------------------------1.노드의 기본형-------------------------------*/
 
-abstract class Node {
+public abstract class Node {
     static int totalNodeQuantity = 0;
     int activeCounter = 0;
     HashSet<Edge> edgeSet = new HashSet<>(); // 여기서 할당하지 않고 null으로 초기화 한다면 outputNode 의 경우 회로에서 오류발생.
@@ -55,6 +56,7 @@ abstract class Node {
 
         return edgeSet;
     }
+    public double getCriticalPoint(){ return criticalPoint;}
 
 
     public boolean askIgnite(double sparkSum){
@@ -125,9 +127,9 @@ abstract class Node {
 //
 /*-------------------------------2.노드와 관련된 데이터 저장소-------------------------------*/
 
-/*-------------------------------2.1.NodeData-------------------------------*/
+/*-------------------------------2.1.Node.NodeData-------------------------------*/
 
-class NodeData implements DataStorage {
+class NodeData implements NodeDataStorage {
 
     final int SERIAL_NUMBER;
     final String NAME;
@@ -175,7 +177,7 @@ class NodeData implements DataStorage {
 
 /*-------------------------------2.1.1.IdentityData-------------------------------*/
 
-/*class IdentityData implements DataStorage {
+/*class IdentityData implements Node.DataStorage {
     private final int SERIAL_NUMBER;
     private final int NODE_FORMAT;
 
@@ -214,7 +216,7 @@ class NodeData implements DataStorage {
 }*/
 //
 //
-/*-------------------------------2.2.Edge-------------------------------*/
+/*-------------------------------2.2.Edge.Edge-------------------------------*/
 /// 독립된 파일에 만듦. (node 밖에서도 사용.)
 
 
@@ -230,42 +232,9 @@ class NodeData implements DataStorage {
 //
 /*-------------------------------2.I.데이터 저장소와 관련된 인터페이스-------------------------------*/
 
-interface DataStorage {
-    DataStorage copy(); /// deep copy, shallow copy 잘 구현하기!
+interface NodeDataStorage {
+    NodeDataStorage copy(); /// deep copy, shallow copy 잘 구현하기!
 }
 
-//
-//
-//
-//
-//
-//
-//
-//
-//
-/*-------------------------------I.노드의 발전형에 이식될 인터페이스-------------------------------*/
-interface NoneOutputNodeInter {
-    boolean transmitSpark();
-}
-//// *중요* 노드 포멧 추가시 Entity의 static 메서드 중 Node 파일 작성 메서드, NodeFormat 입력받는 메서드 또한 업데이트 할 것!
-interface InputNodeInter extends NoneOutputNodeInter {
-    final int NODE_FORMAT = 1;
-}
-
-interface ProcessNodeInter extends NoneOutputNodeInter {
-    final int NODE_FORMAT = 2;
-}
-
-interface OutputNodeInter {
-    final int NODE_FORMAT = 3;
-}
 /*-------------------------------E.노드의 발전형에 이식될 인터페이스-------------------------------*/
 
-class InValidNodeFormatException extends RuntimeException{
-    InValidNodeFormatException(String msg){
-        super(msg);
-    }
-    InValidNodeFormatException(){
-        super("InValidNodeFormatException");
-    }
-}

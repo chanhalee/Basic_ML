@@ -1,4 +1,9 @@
-class InputNode extends Node implements InputNodeInter {
+package Node;
+
+import Node.InputNodeInter;
+import Node.Node;
+
+public class InputNode extends Node implements InputNodeInter {
     private static int inputNodeQuantity = 0;
 
     public InputNode(String name, int serial, double criticalPoint) {

@@ -1,6 +1,8 @@
+package Node;
+
 public class OutputNode extends Node implements OutputNodeInter{
 
-    OutputNode(String name, int serial, double criticalPoint) {
+    public OutputNode(String name, int serial, double criticalPoint) {
         super(name, serial, criticalPoint);
     }
 

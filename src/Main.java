@@ -1,23 +1,20 @@
+import Entity.Entity;
+
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
         ArrayList<String> inputFileList = new ArrayList<>();
         ArrayList<String> outputFileList = new ArrayList<>();
-        HashMap<LevelData, HashMap<Node, HashSet<Edge>>> testResult;
-        ArrayList<HashMap<Node, HashSet<Edge>>> testResult2;
-        inputFileList.add("testInputNode.txt");
-        inputFileList.add("testInputEdge.txt");
-        inputFileList.add("testInputQueue.txt");
-        outputFileList.add("testOutputNode.txt");
-        outputFileList.add("testOutputEdge.txt");
-        outputFileList.add("testOutputQueue.txt");
+        inputFileList.add("src/Entity/DataSources/InputDataSources/testInputNode.txt");
+        inputFileList.add("src/Entity/DataSources/InputDataSources/testInputEdge.txt");
+        inputFileList.add("src/Entity/DataSources/InputDataSources/testInputQueue.txt");
+        outputFileList.add("src/Entity/DataSources/OutputDataSources/testOutputNode.txt");
+        outputFileList.add("src/Entity/DataSources/OutputDataSources/testOutputEdge.txt");
+        outputFileList.add("src/Entity/DataSources/OutputDataSources/testOutputQueue.txt");
+        //Entity.makeInputFiles();
 
-        //Entity entity = new Entity(inputFileList, outputFileList);
-        //entity.runCircuit();
-        Entity.makeInputFiles();
+        Entity entity = new Entity(inputFileList, outputFileList);
+        entity.runCircuit();
     }
 }

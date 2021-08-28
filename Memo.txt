@@ -1,7 +1,7 @@
 
 ****************<중요 메모>***********************
 
-Entity 클래스의 public 메서드 중 returnMindCircuit()은 테스트가 끝난 후 삭제할 것!
+Entity.Entity 클래스의 public 메서드 중 returnMindCircuit()은 테스트가 끝난 후 삭제할 것!
 
 **<오작동>**
 노드에 매칭되는 엣지가 없을 때 노드 입력이 씹히는 경우 발견!
@@ -16,4 +16,4 @@ Matcher 의 동작방식 때문으로 보임
 
 **<check List>**
 각 틱(한번의 파도; 회기보다 작은 단위)이후에 postTickProcess 를 실행하여 클리닉. (가중치 조정, 루프엣지 카운터 증가)
-각 회기 이후에 노드에 있는 postCycleProcess 를 실행하여 Edge 의 LoopCounter 를 초기화.
+각 회기 이후에 노드에 있는 postCycleProcess 를 실행하여 Edge.Edge 의 LoopCounter 를 초기화.

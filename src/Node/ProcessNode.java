@@ -1,6 +1,8 @@
+package Node;
+
 public class ProcessNode extends Node implements ProcessNodeInter {
 
-    ProcessNode(String name, int serial, double criticalPoint) {
+    public ProcessNode(String name, int serial, double criticalPoint) {
         super(name, serial, criticalPoint);
     }
 
