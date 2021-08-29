@@ -1,6 +1,6 @@
 Basic_ML
 =============
-Fire Together? Wire Together! - stimulated by Breakwater model
+Fire Together? Wire Together! #### stimulated by Breakwater model
 -----------------------------
 # <실행 환경>
 ### Language:   JAVA 16.02
