@@ -2,10 +2,10 @@ Basic_ML
 =============
 Fire Together? Wire Together! - stimulated by Breakwater model
 -----------------------------
-#<실행 환경>
-###Language:   JAVA 16.02
-###OS:         MacOS 11.5.2
-###IDE:        IntelliJ 2021.2
+# <실행 환경>
+### Language:   JAVA 16.02
+### OS:         MacOS 11.5.2
+### IDE:        IntelliJ 2021.2
 
 <프로젝트 배경>
 2021년 02월 컴퓨터 공학부 전과를 위해 개인 프로젝트를 진행했었다.
