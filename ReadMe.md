@@ -50,7 +50,7 @@ Entity.Entity > Circuit > Node.Node > Edge.Edge
         Edge.Edge: 출발 노드(소속 노드)의 흥분시 활성화 되며, 도착 노드에 가중치를 적용한 자극을 전달한다.
         Edge.LoopEdge: Edge.Edge 와 작동방식을 비슷하나 차이점은 Edge.Edge 는 무한루프를 만들 가능성이 없지만, LoopEdge는 무한루프를 만들가능성이 있다.
                   따라서 한번의 인풋에 활성화 되는 횟수에 상한을 적용한다.
-#### E.기타
+#### E. 기타
 totalQueue > Cycle > Tick
 = 전체 시행 > 1회기 > 틱
         Tick: 노드의 흥분여부에 따라 Edge를 통해 다음노드로 자극이 전달되어 다음노드가 흥분여부를 결정하기까지의 시행을 틱 이라고 한다.
