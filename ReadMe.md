@@ -30,9 +30,13 @@ wave, spark, tick 등 머릿속에 있는 개념을 인공지능 개론도 배�
 
 ## <도해>
 ![프로젝트 도해](https://github.com/lee-chanah/Basic_ML/blob/NoneLevelCircuit/docs/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EB%8F%84%ED%95%B4-Breakwater.png)
->도해
-![출력예시](https://github.com/lee-chanah/Basic_ML/blob/NoneLevelCircuit/docs/%EC%B6%9C%EB%A0%A5%20%EC%98%88%EC%8B%9C.png)
->출력 예시
+
+![출력예시1](https://github.com/lee-chanah/Basic_ML/blob/NoneLevelCircuit/docs/%EC%8B%A4%ED%96%89%20%EC%98%88%EC%8B%9C1.gif)
+> 출력 예시1
+
+
+![출력예시2](https://github.com/lee-chanah/Basic_ML/blob/NoneLevelCircuit/docs/%EC%8B%A4%ED%96%89%20%EC%98%88%EC%8B%9C2.gif)
+> 출력 예시2
 
 ## 1. 구성
 
