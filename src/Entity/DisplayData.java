@@ -4,6 +4,7 @@ import Edge.Edge;
 import Node.Node;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class DisplayData {
     private static int cycleCounter = 0;
@@ -249,13 +250,18 @@ public class DisplayData {
                 System.out.println("   |");
                 // 1틱동안의 deposit 출력 완료
             }
-            tickCounter++;
 
             System.out.print("    ----");
             for(int i = 0; i < totalNodeQuantity; i++){
                 System.out.print("---------");
             }
             System.out.println("------------------------------------------------------");
+//            try {
+//                TimeUnit.MILLISECONDS.sleep(1000);
+//            }catch (InterruptedException ie){
+//                //
+//            }
+            tickCounter++;
         }
         // 1틱 출력 종료
         cycleCounter++;
