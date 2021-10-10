@@ -50,12 +50,12 @@ Entity > Circuit > Node > Edge
             레벨이 없는 입력, 처리, 출력의 3단계만 있는 구성으로 하려 했으나 뒤에 나온 회로 구상안에 나와있듯 여러 문제점이 예상되어
             Level을 진행의 경향성을 나타내도록 남겨두었다.
 #### 3. Node: 사고회로의 노드
-        *InputNode, ProcessNode, OutputNode 로 나뉜다.
+        <InputNode>, <ProcessNode>, <OutputNode> 로 나뉜다.
         InputNode: InputQueue 로 부터 자극을 전달받아 ProcessNode 로 전달한다.
         ProcessNode: InputNode 의 엣지를 통해 가중치를 곱한 자극들을 입력받고, 다양한 엣지에 자극을 재전파한다.
         OutputNode: 전파되고 재생산된 자극들의 종착역. 다른 노드로 통하는 엣지는 없고, 회로의 진행결과를 표현하는 역할을 한다.
 #### 4. Edge: 노드에서 다른 노드에 자극을 전달하기 위한 교각.
-        * LoopEdge 와 루프가 없는 Edge 로 나뉜다.
+        <LoopEdge> 와 루프가 없는 <Edge> 로 나뉜다.
         Edge: 출발 노드(소속 노드)의 흥분시 활성화 되며, 도착 노드에 가중치를 적용한 자극을 전달한다.
         LoopEdge: Edge 와 작동방식을 비슷하나 차이점은 Edge 는 무한루프를 만들 가능성이 없지만, LoopEdge는 무한루프를 만들가능성이 있다.
                   따라서 한번의 인풋에 활성화 되는 횟수에 상한을 적용한다.
