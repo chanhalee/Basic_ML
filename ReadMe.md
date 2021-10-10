@@ -29,7 +29,7 @@ wave, spark, tick 등 머릿속에 있는 개념을 인공지능 개론도 배�
 
 
 ## <도해>
-![프로젝트 도해](https://github.com/lee-chanah/Basic_ML/blob/NoneLevelCircuit/docs/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EB%8F%84%ED%95%B4-Breakwater_model.jpg)
+![프로젝트 도해](https://github.com/lee-chanah/Basic_ML/blob/NoneLevelCircuit/docs/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%20%EB%8F%84%ED%95%B4-Breakwater_model.png)
 
 ## 1. 구성
 
