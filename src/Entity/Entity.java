@@ -3,7 +3,6 @@ package Entity;
 ## 목차
 1. 개체의 기본형
 2.* 개체에 관련된 데이터 저장소
-2.1. Entity.LevelData
 3.* 개체의 동작에 필요한 클래스
 3.1.파일 입출력 관련 함수
 
@@ -26,6 +25,9 @@ import Edge.*;
 import Edge.Exceptions.InValidEdgeFormatException;
 import Edge.Interfaces.EdgeInter;
 import Node.*;
+import Utility.ContainsTwo;
+import Level.*;
+
 import java.util.*;
 import java.io.*;
 /*-------------------------------1.개체의 기본형-------------------------------*/
@@ -33,71 +35,55 @@ import java.io.*;
 public class Entity {
     static final int WAVE_SUSTAIN_TICK = 2;
     static final double WAVE_REDUCE_COEFFICIENT = 0.6;
-    private HashMap<LevelData, HashMap<Node, HashSet<Edge>>> mindCircuit; // (levelData -(Node.Node - [Edge.Edge]))의 구성.
-    private ArrayList<HashMap<Node, HashSet<Edge>>> circuitList;
-    private HashMap<Integer, Double> serialNCriticalSet;
-    private HashMap<Integer, HashMap<Integer, SingleEntryMap<Double, Double>>> stimulationSumLogInACycle;
-    private HashMap<Integer,SingleEntryMap<HashSet<Node>, HashSet<Edge>>> previousSparkedNode;//여기도 방파제 모델 적용. 지난 2회기의 흥분노드 저장
-    private HashMap<Integer, HashMap<Integer, Double>> stimulationDeposit;
-    private HashSet<Node> currentSparkedNode = new HashSet<>();
-    private HashMap<Integer, HashSet<Integer>> cycleLog;
-    private HashMap<Integer, HashMap<Integer, HashSet<Integer>>> totalSimulationLog = new HashMap<>();
     private QueueDataStorage queueData;
+    ArrayList<Level> circuit;
     ArrayList<String> inputFileList;
     ArrayList<String> outputFileList;
 
     public Entity(ArrayList<String> inputFileList, ArrayList<String> outputFileList){
         this.inputFileList = inputFileList;
         this.outputFileList = outputFileList;
-        mindCircuit =  Matcher(readNodeFromFile(inputFileList.get(0)), readEdgeFromFile(inputFileList.get(1)));
-        circuitList = makeCircuitListFromMap(mindCircuit);
+        circuit =  readNodeFromFile(inputFileList.get(0));
+        readAndMatchEdgeFromFile(inputFileList.get(1), circuit);
         queueData = readInputQueue(inputFileList.get(2));
-        serialNCriticalSet = makeSerialNCriticalSet();
-        previousSparkedNode = new HashMap<>();
-        for(int i = 1; i <= WAVE_SUSTAIN_TICK; i++){
-            previousSparkedNode.put((-i), new SingleEntryMap<HashSet<Node>, HashSet<Edge>>(new HashSet<Node>(), new HashSet<Edge>()));
-        }
-        stimulationDeposit = new HashMap<>();
-        for (int i = 0; i <= WAVE_SUSTAIN_TICK; i++) {
-            stimulationDeposit.put(-i, makeDepositForAll());
-        }
-
     }
-/*
-    public void visualiseCircuit(){
-        int level = 0;
-        System.out.println("회로 도식화");
-        if(circuitList.isEmpty()) {
-            System.out.println("빈 회로!");
-            return;
+
+    public void run(){
+        ArrayList<ContainsTwo<Integer, Boolean>> presentQueue;
+        while((presentQueue = queueData.getNextQueue()) != null){
+            runCycle(presentQueue);
+            circuit.forEach(level -> level.preCycleProcess());
         }
-        for(HashMap<Node.Node, HashSet<Edge.Edge>> nhm : circuitList){
-            System.out.println("Level: " + level++);
-            if(nhm == null)
-                continue;
-            for(Node.Node n: nhm.keySet()){
-                System.out.print("\t\t ");
-                System.out.println(n);
-                HashSet<Edge.Edge> ehs = nhm.get(n);
-                if(ehs == null)
-                    continue;
-                for(Edge.Edge e: ehs){
-                    System.out.print("\t\t\t\t\t\t\t\t\t\t\t  ");
-                    System.out.println(e);
-                }
+    }
+
+    private void runCycle(ArrayList<ContainsTwo<Integer, Boolean>> presentQueue){
+        boolean flag = true;
+        ArrayList<ArrayList<HistoryOfTick>> history = new ArrayList<>();
+        for(ContainsTwo<Integer, Boolean> ct: presentQueue){
+            if(ct.getItem2())// input 입력
+                circuit.get((ct.getItem1() /100)%10).setQueueData(ct.getItem1());
+        }
+        circuit.forEach(level -> level.preCycleProcess());
+        while(flag){
+            flag = false;
+            for(Level level: circuit){
+                if(level.tick())
+                    flag = true;
+                level.postTickProcess();
             }
         }
-        System.out.println();
-        System.out.println();
-    }*/
+        for(Level level: circuit){
+            history.add(level.getHistory());
+        }
+        DisplayData.displaySingleCycle(history);
+    }
 
 
-    private HashMap<LevelData, HashSet<Node>> readNodeFromFile(String inputFile){// Node.Node 만 읽어 ArrayList 로 저장, level 과 묶어 map 을 만들어 반환.
-        HashMap<LevelData, HashSet<Node>> result = new HashMap<>();
-        LevelData levelData = null;
-        HashSet<Node> nodeData = null;
+    private ArrayList<Level> readNodeFromFile(String inputFile){// Node.Node 만 읽어 ArrayList 로 저장, level 과 묶어 map 을 만들어 반환.
         String fileLine = "";
         ArrayList<String> splitInputData = null;
+        ArrayList<Level> result = new ArrayList<>();
+        Level presentLevel = null;
         try {
             BufferedReader inputBuffer = new BufferedReader(new FileReader(new File(inputFile)));
             for (int i = 1; (fileLine = inputBuffer.readLine()) != null; i++){  /// 파일에서 라인 읽어오기
@@ -107,27 +93,24 @@ public class Entity {
                     fileLine = fileLine.replace("#", "");
                     fileLine = fileLine.replace("[", "");
                     splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
-                    levelData = makeLevelDataFromAList(splitInputData);
-                    nodeData = new HashSet<Node>();
-                    result.put(levelData, nodeData);
+                    presentLevel = new Level(splitInputData.get(2), Integer.parseInt(splitInputData.get(1)));
+                    result.add(presentLevel);
                     continue;
                 }
                 fileLine = fileLine.replace("[", "");
                 splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
-                assert nodeData != null;        // 컴파일러가 처리한 코드. assert 명령어 공부 필요.
-                nodeData.add(makeNodeFromAList(splitInputData));
+                if(presentLevel == null) {
+                    System.out.println("주석이 노드보다 선행되어야 함!!, 파일 형식 오류");
+                    throw new IOException();
+                }
+                else
+                    presentLevel.addNode(makeNodeFromAList(splitInputData), WAVE_SUSTAIN_TICK, WAVE_REDUCE_COEFFICIENT);
             }
             inputBuffer.close();
-        } catch (IOException ie){
+        } catch (IOException | NumberFormatException ie){
             ie.printStackTrace();
         }
         return result;
-    }
-
-    private LevelData makeLevelDataFromAList(ArrayList<String> data){
-        LevelData levelData = null;
-        levelData = new LevelData(Integer.parseInt(data.get(0).trim()), Integer.parseInt(data.get(1).trim()), data.get(2).trim());
-        return levelData;
     }
 
     private Node makeNodeFromAList(ArrayList<String> data){
@@ -147,11 +130,10 @@ public class Entity {
         return node;
     }
 
-
-    private HashMap<Integer, HashSet<Edge>> readEdgeFromFile(String inputFile){  // 파일로부터 엣지 정보를 읽어 시작노드 시리얼과 엣지를 묶어 저장.
-        HashMap<Integer, HashSet<Edge>> result = new HashMap<>();
+    private void readAndMatchEdgeFromFile(String inputFile, ArrayList<Level> circuit){  // 파일로부터 엣지 정보를 읽어 시작노드 시리얼과 엣지를 묶어 저장.
         String fileLine = "";
-        ArrayList<String> splitInputData = null;
+        String[] splitInputData = null;
+        Edge newEdge;
         try {
             FileReader fileInput = new FileReader(inputFile);
             BufferedReader inputBuffer = new BufferedReader(fileInput);
@@ -159,42 +141,38 @@ public class Entity {
                 if(fileLine.trim().startsWith("$$"))    //라인의 가장 앞에 나오는 $$는 주석역할
                     continue;
                 fileLine = fileLine.replace("[", "");
-                splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
-                if(!result.containsKey(Integer.valueOf(splitInputData.get(1)))){
-                    HashSet<Edge> tempHashSet = new HashSet<Edge>();
-                    result.put(Integer.valueOf(splitInputData.get(1)), tempHashSet);
-                }
-                result.get(Integer.valueOf(splitInputData.get(1))).add(makeEdgeFromAList(splitInputData));
+                splitInputData = fileLine.split("]");
+                newEdge = makeEdgeFromArr(splitInputData);
+                circuit.get((newEdge.getSTART_NODE_SERIAL()/100)%10).LinkingEdgeWithStartNode(newEdge);
+                circuit.get((newEdge.getDestination()/100)%10).LinkingEdgeWithDestNode(newEdge);
             }
             inputBuffer.close();
         }catch (IOException ie){
             ie.printStackTrace();
         }
-        return result;
     }
 
 
-    private Edge makeEdgeFromAList(ArrayList<String> data){
+    private Edge makeEdgeFromArr(String[] data){
         Edge edge = null;
-        Integer startNodeSerial;
-        int edgeFormat = Integer.parseInt(data.get(0).trim());
         try {
+            int edgeFormat = Integer.parseInt(data[0].trim());
             if(edgeFormat == 1) {
-                if (data.size() == 5)
-                    edge = new Edge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)), Double.parseDouble(data.get(4)));
-                else if (data.size() == 4)
-                    edge = new Edge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)));
+                if (data.length == 5)
+                    edge = new Edge(Integer.parseInt(data[1]), Integer.parseInt(data[2]), Double.parseDouble(data[3]), Double.parseDouble(data[4]));
+                else if (data.length == 4)
+                    edge = new Edge(Integer.parseInt(data[1]), Integer.parseInt(data[2]), Double.parseDouble(data[3]));
                 else
-                    throw new InValidEdgeFormatException("정의되지 않은 Edge.Edge 생성자 매개변수 개수 값: " + data.size());
+                    throw new InValidEdgeFormatException("정의되지 않은 Edge.Edge 생성자 매개변수 개수 값: " + data.length);
             }else if(edgeFormat == 2){
-                if(data.size() == 6)
-                    edge = new LoopEdge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)), Double.parseDouble(data.get(4)), Integer.parseInt(data.get(5)));
-                else if(data.size() == 5)
-                    edge = new LoopEdge(Integer.parseInt(data.get(1)), Integer.parseInt(data.get(2)), Double.parseDouble(data.get(3)), Integer.parseInt(data.get(4)));
-                else throw new InValidEdgeFormatException("정의되지 않은 Edge.LoopEdge 생성자 매개변수 개수 값: " + data.size());
+                if(data.length == 6)
+                    edge = new LoopEdge(Integer.parseInt(data[1]), Integer.parseInt(data[2]), Double.parseDouble(data[3]), Double.parseDouble(data[4]), Integer.parseInt(data[5]));
+                else if(data.length == 5)
+                    edge = new LoopEdge(Integer.parseInt(data[1]), Integer.parseInt(data[2]), Double.parseDouble(data[3]), Integer.parseInt(data[4]));
+                else throw new InValidEdgeFormatException("정의되지 않은 Edge.LoopEdge 생성자 매개변수 개수 값: " + data.length);
             }
             else throw new InValidEdgeFormatException("정의되지 않은 EDGE_FORMAT 입력. 값: " + edgeFormat);
-        } catch(InValidEdgeFormatException ee){
+        } catch(InValidEdgeFormatException | NumberFormatException ee){
             System.out.println("에러 메시지: " + ee.getMessage());
             ee.printStackTrace();
         }
@@ -202,73 +180,13 @@ public class Entity {
     }
 
 
-    private HashMap<LevelData, HashMap<Node, HashSet<Edge>>> Matcher(HashMap<LevelData, HashSet<Node>> nodeMap, HashMap<Integer, HashSet<Edge>> edgeMap){
-        HashMap<LevelData, HashMap<Node, HashSet<Edge>>> result = new HashMap<>();
-        HashMap<Node, HashSet<Edge>> NodeNEdgeMap = new HashMap<>();
-        HashSet<Node> tempNodeSet = new HashSet<>();
-        for(LevelData ld: nodeMap.keySet()){
-            result.put(ld, new HashMap<Node, HashSet<Edge>>());
-        }
-        for(HashSet<Node> i :nodeMap.values()) {
-            tempNodeSet.addAll(i);
-        }
-        for(Node n : tempNodeSet){
-            NodeNEdgeMap.put(n, null);
-            for(Integer i : edgeMap.keySet()){
-                if(n.SERIAL_NUMBER == i){
-                    NodeNEdgeMap.replace(n, edgeMap.get(i));
-                    n.setEdge(edgeMap.get(i));
-                    //실행속도를 높이기 위해 아래 두줄을 만들었었는데 foreach문 안에서 foreach의 소스를 건드리는 것이 예외를 발생시킴!
-                    // 해당 매칭 함수에서 상당한 시간이 소모될 것으로 예상되어 향후 개선이 필요함.
-/*                    edgeMap.remove(i);
-                    tempNodeSet.remove(n);*/
-                }
-            }
-        }
-        for(LevelData ld: nodeMap.keySet()){
-            HashSet<Node> ns = nodeMap.get(ld);
-            for(Node n : NodeNEdgeMap.keySet()){
-                if(ns.contains(n)){
-                    result.get(ld).put(n, NodeNEdgeMap.get(n));
-                }
-            }
-        }
-        return result;
-    }
-
-    private ArrayList<HashMap<Node, HashSet<Edge>>> makeCircuitListFromMap(HashMap<LevelData, HashMap<Node, HashSet<Edge>>> map){
-        ArrayList<HashMap<Node, HashSet<Edge>>> result = new ArrayList<HashMap<Node, HashSet<Edge>>>();
-        Set<LevelData> keySet = map.keySet();
-        Iterator<LevelData> iter;
-        LevelData curVal;
-        LevelData minVal;
-        LevelData prevMinVal = new LevelData(0, 0, "");
-        while(keySet.size() != result.size()) {
-            iter = keySet.iterator();
-            curVal = iter.next();
-            while(curVal.hashCode() <= prevMinVal.hashCode()){
-                curVal = iter.next();
-            }
-            minVal = curVal;
-            iter = keySet.iterator();
-            while(iter.hasNext()){
-                curVal = iter.next();
-                if(curVal.hashCode() < minVal.hashCode() && curVal.hashCode() > prevMinVal.hashCode()){
-                    minVal = curVal;
-                }
-            }
-            result.add(map.get(minVal));
-            prevMinVal = minVal;
-        }
-        return result;
-    }
 
     private QueueDataStorage readInputQueue(String inputFile) {
         QueueDataStorage result;
-        LinkedList<ArrayList<Boolean>> inputDataList = new LinkedList<>();
         ArrayList<Integer> inputNodeSerials = new ArrayList<>();
-        ArrayList<String> splitInputData;
+        String[] splitInputData;
         String fileLine = "";
+        ArrayList<ArrayList<ContainsTwo<Integer, Boolean>>> inputs = new ArrayList<>();
         try {
             FileReader fileInput = new FileReader(inputFile);
             BufferedReader inputBuffer = new BufferedReader(fileInput);
@@ -278,275 +196,26 @@ public class Entity {
                 if (fileLine.trim().startsWith("##")){
                     fileLine = fileLine.replace("#", "");
                     fileLine = fileLine.replace("[", "");
-                    splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
+                    splitInputData = fileLine.trim().split("]");
                     for(String s : splitInputData){
                         inputNodeSerials.add(Integer.valueOf(s.trim()));
                     }
                     continue;
                 }
+                ArrayList<ContainsTwo<Integer, Boolean>> presentQueue = new ArrayList<>();
+                inputs.add(presentQueue);
                 fileLine = fileLine.replace("[", "");
-                splitInputData = new ArrayList<String>(Arrays.stream(fileLine.split("]")).toList());
-                inputDataList.add(makeQueueFromSplitData(splitInputData));
+                splitInputData = fileLine.trim().split("]");
+                for(int j = 0; j < splitInputData.length; j++){
+                    presentQueue.add(new ContainsTwo<>(inputNodeSerials.get(j), Boolean.parseBoolean(splitInputData[j])));
+                }
             }
             inputBuffer.close();
         } catch (IOException ie){
             ie.printStackTrace();
         }
-        result = new QueueDataStorage(inputNodeSerials, inputDataList);
+        result = new QueueDataStorage(inputs);
         return result;
-    }
-    private ArrayList<Boolean> makeQueueFromSplitData(ArrayList<String> data){
-        ArrayList<Boolean> result = new ArrayList<>();
-        try {
-            if(data.size() != circuitList.get(0).size()){
-                throw new InValidInputQueueFormatException("입력의 갯수와 인풋노드의 개수가 불일치합니다. 입력 갯수: " + data.size() + ", 필요 갯수: "+ circuitList.get(0).size());
-            }
-            for(String s : data){
-                result.add(Boolean.parseBoolean(s));
-            }
-        }catch(InValidInputQueueFormatException qe){
-            System.out.println("에러 메시지: " + qe.getMessage());
-            qe.printStackTrace();
-        }
-        return result;
-    }
-    private HashMap<Integer, Double> makeSerialNCriticalSet(){
-        HashMap<Integer, Double> result = new HashMap<>();
-        for (HashMap<Node, HashSet<Edge>> nm: circuitList){
-            for(Node n: nm.keySet()){
-                result.put(n.SERIAL_NUMBER, n.getCriticalPoint());
-            }
-        }
-        return result;
-    }
-    private HashMap<Integer, Double> makeDepositForAll(){
-        if(serialNCriticalSet == null){
-            System.out.println("serialNCriticalSet 없음. makeSerialNCriticalSet 메서드 실행이 선행되어야 함.");
-            throw new RuntimeException("makeDepositForAll()에서 발생!");
-        }
-        HashMap<Integer, Double> result = new HashMap<>();
-        serialNCriticalSet.keySet().forEach(integer -> result.put(integer, (double)0));
-        return result;
-    }
-    private HashMap<Integer, SingleEntryMap<Double, Double>> makeStimulationSumLogForm(){
-        if(serialNCriticalSet == null){
-            System.out.println("serialNCriticalSet 없음!!! makeSerialNCriticalSet 메서드 실행이 선행되어야 함.");
-            throw new RuntimeException("makeStimulationSumLogForm()에서 발생!");
-        }
-        HashMap<Integer, SingleEntryMap<Double, Double>> result = new HashMap<>();
-        for(Integer i: serialNCriticalSet.keySet()){
-            result.put(i, new SingleEntryMap<Double, Double>(serialNCriticalSet.get(i), Double.MIN_VALUE));
-        }
-        return result;
-    }
-    private HashMap<Integer, SingleEntryMap<Double, Double>> makeStimulationSumLogForm(double init){
-        if(serialNCriticalSet == null){
-            System.out.println("serialNCriticalSet 없음!!! makeSerialNCriticalSet 메서드 실행이 선행되어야 함.");
-            throw new RuntimeException("makeStimulationSumLogForm()에서 발생!");
-        }
-        HashMap<Integer, SingleEntryMap<Double, Double>> result = new HashMap<>();
-        for(Integer i: serialNCriticalSet.keySet()){
-            result.put(i, new SingleEntryMap<Double, Double>(serialNCriticalSet.get(i), init));
-        }
-        return result;
-    }
-    private void annihilateBalance(Integer serial){
-        for(int i = 0; i <= WAVE_SUSTAIN_TICK; i++){
-            stimulationDeposit.get(-i).replace(serial, (double)0);
-        }
-    }
-
-
-    public void runCircuit(){
-        HashMap<Integer, Boolean> input;
-        HashMap<Integer, Double> nextWave;
-        Node tempNode;
-        HashSet<Edge> ignitedEdgeSet;
-        HashSet<Node> stimulatedNodeNext;
-        Double tempDouble;
-        int cycleCounter = 0;
-        while(true) {
-            try {
-                stimulatedNodeNext = new HashSet<>();
-                stimulationSumLogInACycle = new HashMap<>();
-                cycleLog = new HashMap<>();
-                stimulationSumLogInACycle.put(0, makeStimulationSumLogForm(0));
-                cycleLog.put(0, new HashSet<Integer>());
-                input = queueData.getNextQueue();
-                for (Integer i : input.keySet()) {
-                    stimulationSumLogInACycle.get(0).get(i).setItem2((double)(input.get(i) ? 1 : 0));
-                    tempNode = findMatchingNode(i);
-                    assert tempNode != null;
-                    if (tempNode.askIgnite(input.get(i) ? 1 : 0)) {
-                        currentSparkedNode.add(tempNode);
-                        cycleLog.get(0).add(tempNode.SERIAL_NUMBER);
-                    }
-                }
-            } catch (EndOfQueueException eqe) {
-                System.out.println("** 모든 회기 종료 **");
-                return;
-            }
-            int tickCounter = 1;
-            while (!currentSparkedNode.isEmpty()) {
-                ignitedEdgeSet = edgeOfIgnited(currentSparkedNode);
-                nextWave = sumOfWeighInOrderOfDestNode(ignitedEdgeSet);
-                cycleLog.put(tickCounter, new HashSet<Integer>());
-                HashMap<Integer, SingleEntryMap<Double, Double>> formForTick = makeStimulationSumLogForm();
-                stimulationSumLogInACycle.put(tickCounter, formForTick);
-                for (Integer i : nextWave.keySet()) {
-                    tempNode = findMatchingNode(i);
-                    assert tempNode != null;
-                    stimulationDeposit.get(0).put(i, nextWave.get(i));
-                    if (tempNode.askIgnite(tempDouble = sumOfStimulationInDeposit(i))) { // true 일경우 다음 노드 흥분! , Deposit 잔고 소멸.
-                        stimulationSumLogInACycle.get(tickCounter).get(i).setItem2(tempDouble);
-                        annihilateBalance(i);
-                        tempNode.activate();
-                        cycleLog.get(tickCounter).add(tempNode.SERIAL_NUMBER);
-                        stimulatedNodeNext.add(tempNode);
-                    }
-                }
-                serialNCriticalSet.keySet().forEach(
-                        (integer -> {if(formForTick.get(integer).item2==Double.MIN_VALUE)
-                            formForTick.get(integer).setItem2(sumOfStimulationInDeposit(integer));}));
-                postTickProcess(ignitedEdgeSet, stimulatedNodeNext);
-                for(Node n : stimulatedNodeNext)
-                    n.deActivate();
-                currentSparkedNode.addAll(stimulatedNodeNext);
-                stimulatedNodeNext = new HashSet<>();
-                tickCounter++;
-            }
-            DisplayData.displaySingleCycle(circuitList, cycleLog, stimulationSumLogInACycle);
-            totalSimulationLog.put(cycleCounter, cycleLog);
-            postCycleProcess();
-            cycleCounter++;
-        }
-        //모든 노드와 엣지 비활성화 과정 추가 (틱마다)
-
-    }
-
-    private Node findMatchingNode(Integer serial){
-        for(HashMap<Node, HashSet<Edge>> h : circuitList)
-            for(Node n : h.keySet())
-                if(n.matches(serial))
-                    return n;
-        return null;
-    }
-
-    private HashMap<Integer, Double> sumOfWeighInOrderOfDestNode(HashSet<Edge> ignitedEdgeSet){
-
-        HashMap<Integer, Double> result = new HashMap<>();
-        for(Edge e : ignitedEdgeSet){
-            if(result.containsKey(e.getDestination()))
-                result.replace(e.getDestination(),result.get(e.getDestination()) + e.getWeight());
-            else
-                result.put(e.getDestination(), e.getWeight());
-        }
-        return result;
-    }
-
-    private HashSet<Edge> edgeOfIgnited(HashSet<Node> currentSparkedNode){
-        HashSet<Edge> result = new HashSet<>();
-        for(Node n :currentSparkedNode) {
-            result.addAll(n.getEdge());
-        }
-        HashSet<Edge> tempSet = new HashSet<>();
-        for(Edge e : result){
-            if(! e.checkVital())
-                tempSet.add(e);
-        }
-        result.removeAll(tempSet);
-        return result;
-    }
-
-    private double sumOfStimulationInDeposit(Integer serial){
-        double result = 0;
-        for(int i = (-WAVE_SUSTAIN_TICK); i <= 0; i++){
-            result += stimulationDeposit.get(i).getOrDefault(serial, (double) 0);
-        }
-        return result;
-    }
-
-    private void postTickProcess(HashSet<Edge> ignitedEdgeSet, HashSet<Node> stimulatedNodeNext){
-        HashMap<Integer, Double> currentTickDeposit = sumOfWeighInOrderOfDestNode(ignitedEdgeSet);
-        HashMap<Integer, Double> intDoubleMap = new HashMap<>();
-
-        // 루프 노드의 카운더 조정 과정
-        for(Edge e : ignitedEdgeSet){
-            e.activated();
-        }
-
-        // 이전  WAVE_SUSTAIN_TICK 틱의 기간 동안 활성화된 엣지들 중 현재 흥분 노드를 도착점으로 하는 엣지들에 대한 가중치 보정 과정
-        for(int i = -WAVE_SUSTAIN_TICK; i <= -1; i++){
-            for(Edge e : previousSparkedNode.get(i).item2){
-                for(Node n : currentSparkedNode){
-                    if(n.matches(e.getDestination())){
-                        e.weightAdjustFireTogether();
-                    }
-                }
-            }
-        }
-        // 이번 틱에 활성화된 엣지들 중 후행노드가 흥분한 엣지의 가중치 보정과정
-        for(Edge e: ignitedEdgeSet){
-            for(Node n : currentSparkedNode){
-                if(n.matches(e.getDestination())){
-                    e.weightAdjustFireTogether();
-                }
-            }
-        }
-
-        // previousSparkedNode 업데이트 과정
-        previousSparkedNode.remove(-WAVE_SUSTAIN_TICK);
-
-        for(int i = (-WAVE_SUSTAIN_TICK +1); i <= -1; i++){
-            previousSparkedNode.put(i-1, previousSparkedNode.get(i));
-        }
-        SingleEntryMap<HashSet<Node>, HashSet<Edge>> tempMap = new SingleEntryMap<>(currentSparkedNode, ignitedEdgeSet);
-        previousSparkedNode.put(-1, tempMap);
-        currentSparkedNode = stimulatedNodeNext;    // 다음에 사용될 소스 최신화
-
-
-
-
-        // 반감주기 다다른 자극들에 대해 계수를 곱해 반감주기 갱신하고 다른 위치에 저장.
-        if(! stimulationDeposit.get(-WAVE_SUSTAIN_TICK).isEmpty()){
-            intDoubleMap = stimulationDeposit.get(-WAVE_SUSTAIN_TICK);
-            for(Integer i : intDoubleMap.keySet()){
-                stimulationDeposit.get(0).replace(i, stimulationDeposit.get(0).get(i)+intDoubleMap.get(i) * WAVE_REDUCE_COEFFICIENT);
-            }
-        }
-
-        // stimulationDeposit 업데이트 과정.
-        for(int i = (-WAVE_SUSTAIN_TICK) + 1; i <= 0; i++){
-            stimulationDeposit.replace(i-1, stimulationDeposit.get(i));
-
-            for(Node n : stimulatedNodeNext){
-                stimulationDeposit.get(i).remove(n.SERIAL_NUMBER);
-            }
-        }
-        stimulationDeposit.put(0, makeDepositForAll());
-
-    }
-    private void postCycleProcess(){
-        for(HashMap<Node, HashSet<Edge>> level: circuitList){
-            for(Node n : level.keySet()){
-                n.deActivate();
-                if(level.get(n) != null) {
-                    for (Edge e : level.get(n)) {
-                        e.resetActiveCounter();
-                    }
-                }
-            }
-        }
-        previousSparkedNode = new HashMap<>();
-        for(int i = 1; i <= WAVE_SUSTAIN_TICK; i++){
-            previousSparkedNode.put((-i), new SingleEntryMap<HashSet<Node>, HashSet<Edge>>(new HashSet<Node>(), new HashSet<Edge>()));
-        }
-        stimulationDeposit = new HashMap<>();
-        for (int i = 0; i <= WAVE_SUSTAIN_TICK; i++) {
-            stimulationDeposit.put(-i, makeDepositForAll());
-        }
-        currentSparkedNode = new HashSet<>();
-
     }
 
 
@@ -1019,113 +688,29 @@ public class Entity {
 
 /*-------------------------------2.*개체에 관련된 데이터 저장소-------------------------------*/
 
-/*-------------------------------2.1.Entity.LevelData-------------------------------*/
-
-class LevelData{
-    private final int NODE_FORMAT;
-    private final int LEVEL;
-    private final String LEVEl_NAME;
-
-    LevelData(int nodeFormat, int level, String name) {
-
-        this.NODE_FORMAT = nodeFormat;
-        this.LEVEL = level;
-        this.LEVEl_NAME = name;
-    }
-
-
-    @Override
-    public int hashCode() {
-        return (int) (NODE_FORMAT * 1000 + LEVEL);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj != null && obj instanceof LevelData) {
-            LevelData that = (LevelData) obj;
-            if (this.hashCode() == that.hashCode())
-                return true;
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return "" + this.hashCode();
-    }
-
-}
-
-/*-------------------------------2.1.Entity.SingleEntryMap-------------------------------*/
-class SingleEntryMap<T, S>{
-    public T item1;
-    public S item2;
-    SingleEntryMap(T item1, S item2){
-        this.item1 = item1;
-        this.item2 = item2;
-    }
-    public void setItem1(T value){
-        item1 = value;
-    }
-    public void setItem2(S value){
-        item2 = value;
-    }
-}
-
-
 
 /*-------------------------------3.* 개체의 동작에 필요한 클래스-------------------------------*/
 
 /*-------------------------------3.1.inputQueue 관련 예외 클래스-------------------------------*/
 
-class InValidInputQueueFormatException extends RuntimeException{
-    InValidInputQueueFormatException(String msg){
-        super(msg);
-    }
-    InValidInputQueueFormatException(){
-        super("Entity.InValidInputQueueFormatException");
-    }
-}
-class EndOfQueueException extends RuntimeException{
-    EndOfQueueException(String msg){
-        super(msg);
-    }
-    EndOfQueueException(){
-        super("Entity.EndOfQueueException");
-    }
-}
 
 /*-------------------------------3.2 회로 진행 데이터를 관리하는 클래스-------------------------------*/
 class QueueDataStorage{
-    private ArrayList<Integer> inputNodeSerials;
-    private LinkedList<ArrayList<Boolean>> inputQueue;
+    private ArrayList<ArrayList<ContainsTwo<Integer, Boolean>>> inputs;
+    private ArrayList<ArrayList<HistoryOfTick>> totalHistory;
     private int cycleCounter = 0;
     private int totalInputCycle;
-    private Iterator<ArrayList<Boolean>> queueIter;
 
-    QueueDataStorage(ArrayList<Integer> inputNodeSerials, LinkedList<ArrayList<Boolean>> inputQueue){
-        this.inputNodeSerials = inputNodeSerials;
-        this.inputQueue = inputQueue;
-        totalInputCycle = inputQueue.size();
-        queueIter = this.inputQueue.iterator();
+    QueueDataStorage(ArrayList<ArrayList<ContainsTwo<Integer, Boolean>>> inputs){
+        this.inputs = inputs;
+        totalInputCycle = inputs.size();
     }
-    public HashMap<Integer, Boolean> getNextQueue() throws EndOfQueueException{
-        HashMap<Integer, Boolean> result = new HashMap<>();
-        if(queueIter.hasNext()){
-            ArrayList<Boolean> al = queueIter.next();
-            for(int i = 0; i < inputNodeSerials.size(); i++){
-                result.put(inputNodeSerials.get(i), al.get(i));
-            }
-            queueIter.remove();
-            cycleCounter ++;
-            return result;
+    public ArrayList<ContainsTwo<Integer, Boolean>> getNextQueue(){
+        if(cycleCounter < inputs.size()){
+            return inputs.get(cycleCounter++);
         }
-        throw new EndOfQueueException();
-    }
-
-    @Override
-    public String toString(){
-        return inputNodeSerials.toString() +"\n"+ inputQueue.toString();
+        else
+            return null;
     }
 }
 

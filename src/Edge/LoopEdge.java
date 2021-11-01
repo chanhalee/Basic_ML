@@ -16,6 +16,14 @@ public class LoopEdge extends Edge implements LoopAble {
         super(start, dest, weight);
         this.LOOP_COUNT = loop;
     }
+    @Override
+    public void activate(){    // 속한 노드가 흥분했을 경우 실행
+        if(checkVital()) {
+            activeCounter++;
+            followingNodeAccount.addStimulus(weight);
+            weight += weightDelta;
+        }
+    }
 
     @Override
     public boolean checkVital(){

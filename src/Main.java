@@ -18,6 +18,6 @@ public class Main {
         //Entity.makeInputFiles();
 
         Entity entity = new Entity(inputFileList, outputFileList);
-        entity.runCircuit();
+        entity.run();
     }
 }

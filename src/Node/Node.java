@@ -21,18 +21,19 @@ E. 노드에 관련된 사용자 정의 예외
 
 import Edge.Edge;
 import java.util.*;
+import java.util.function.Consumer;
 /*-------------------------------1.노드의 기본형-------------------------------*/
 
 public abstract class Node {
     static int totalNodeQuantity = 0;
     int activeCounter = 0;
-    HashSet<Edge> edgeSet = new HashSet<>(); // 여기서 할당하지 않고 null으로 초기화 한다면 outputNode 의 경우 회로에서 오류발생.
+    ArrayList<Edge> edgeList = new ArrayList<>(); // 여기서 할당하지 않고 null으로 초기화 한다면 outputNode 의 경우 회로에서 오류발생.
 
     final String NAME;
     public final int SERIAL_NUMBER;
     final double INIT_CRITICAL_POINT;
     double criticalPoint;
-    boolean active = false;
+    protected boolean active = false;
 
 
     private NodeData backupData = null; /*prevData 로 변수명 변경 검토*/    // 이상치 발견시 SentinelNode 가 접근하여 롤백
@@ -48,14 +49,16 @@ public abstract class Node {
         backupData = new NodeData(name, serial, criticalPoint);
         totalNodeQuantity++;
     }
+    public abstract void addEdge(Edge edge);
+    public abstract void addPrevEdge(Edge edge);
 
-    public void setEdge(HashSet<Edge> set){
-        this.edgeSet = set;
+    public void setEdge(ArrayList<Edge> set){
+        this.edgeList = set;
     }
-    public HashSet<Edge> getEdge(){
+    public ArrayList<Edge> getEdge(){
+        return edgeList;
+    }
 
-        return edgeSet;
-    }
     public double getCriticalPoint(){ return criticalPoint;}
 
 
@@ -64,9 +67,14 @@ public abstract class Node {
     }
 
     public void activate(){
+        Consumer<Edge> activateEdge = (edge)->edge.activate();
         active = true;
+        edgeList.forEach(activateEdge);
         activeCounter++;
     }
+    public abstract void cleanseTick();
+    public abstract void adjustEdgeWeigh();
+    public boolean isItActivated(){return active;}
 
     public void deActivate() {
         active = false;
