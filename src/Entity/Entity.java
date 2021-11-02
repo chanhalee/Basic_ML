@@ -61,7 +61,7 @@ public class Entity {
         ArrayList<ArrayList<HistoryOfTick>> history = new ArrayList<>();
         for(ContainsTwo<Integer, Boolean> ct: presentQueue){
             if(ct.getItem2())// input 입력
-                circuit.get((ct.getItem1() /100)%10).setQueueData(ct.getItem1());
+                circuit.get((ct.getItem1() /100)%100).setQueueData(ct.getItem1());
         }
         circuit.forEach(level -> level.preCycleProcess());
         while(flag){
@@ -143,8 +143,8 @@ public class Entity {
                 fileLine = fileLine.replace("[", "");
                 splitInputData = fileLine.split("]");
                 newEdge = makeEdgeFromArr(splitInputData);
-                circuit.get((newEdge.getSTART_NODE_SERIAL()/100)%10).LinkingEdgeWithStartNode(newEdge);
-                circuit.get((newEdge.getDestination()/100)%10).LinkingEdgeWithDestNode(newEdge);
+                circuit.get((newEdge.getSTART_NODE_SERIAL()/100)%100).LinkingEdgeWithStartNode(newEdge);
+                circuit.get((newEdge.getDestination()/100)%100).LinkingEdgeWithDestNode(newEdge);
             }
             inputBuffer.close();
         }catch (IOException ie){
