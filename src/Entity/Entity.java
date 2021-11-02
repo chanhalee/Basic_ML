@@ -12,8 +12,8 @@ package Entity;
 // ex) 덤벙대는 개체, 예민한 개체, 우두머리 개체 등..
 //
 //
-//idea) input 이 첫 레벨에서 이루어지는게 아니라 회로의 중간에서도 이루어질 수 있다면?
-//re-idea) 차라리 레벨이 연속적으로(0->1->2->3) 이어지는게 아니라 유기적으로 이어지게 한다면? (0->2->4)
+// idea) input 이 첫 레벨에서 이루어지는게 아니라 회로의 중간에서도 이루어질 수 있다면?
+// re-idea) 차라리 레벨이 연속적으로(0->1->2->3) 이어지는게 아니라 유기적으로 이어지게 한다면? (0->2->4)
 // 도전과제) 역행구현 *고려1: 무한순환 방지 (아웃풋 노드까지 경로 길이 계산 구현) 무한일 경우 센티넬 개입 (경로 파괴, 경로 조작, 구간반복 해제)
 // 도전과제2) 전달 속도 다양화 (빠른 생각, 느린 생각)
 //re-re-idea) level0는 인풋으로 고정! -> 자극 전달을 레벨과 무관하게 진행되도록
@@ -629,7 +629,6 @@ public class Entity {
                     result.add(Integer.valueOf(splitInputData.get(2)));
                 }
             }
-
             inputBuffer.close();
         }catch(IOException ie){
             System.out.println("인풋노드 정보를 읽어오는 과정에서 문제 발생");
@@ -657,34 +656,8 @@ public class Entity {
                 System.out.println("잘못된 입력 내용 다시 입력하세요");
             }
         }
-
     }
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*-------------------------------2.*개체에 관련된 데이터 저장소-------------------------------*/
 
@@ -704,6 +677,7 @@ class QueueDataStorage{
     QueueDataStorage(ArrayList<ArrayList<ContainsTwo<Integer, Boolean>>> inputs){
         this.inputs = inputs;
         totalInputCycle = inputs.size();
+        totalHistory = new ArrayList<>();
     }
     public ArrayList<ContainsTwo<Integer, Boolean>> getNextQueue(){
         if(cycleCounter < inputs.size()){
@@ -711,6 +685,10 @@ class QueueDataStorage{
         }
         else
             return null;
+    }
+
+    public void addHistory(ArrayList<HistoryOfTick> newTotalHistory) {
+        totalHistory.add(newTotalHistory);
     }
 }
 

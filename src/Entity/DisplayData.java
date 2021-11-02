@@ -1,12 +1,8 @@
 package Entity;
 
-import Edge.Edge;
-import Level.HistoryOfNode;
 import Level.HistoryOfTick;
-import Node.Node;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class DisplayData {
     private static int cycleCounter = 0;
@@ -47,14 +43,6 @@ public class DisplayData {
             if(maxSize < tempInt)
                 maxSize = tempInt;
         }
-//        //
-//        for(HashSet<Integer> hs : inputCycleLog.values()){
-//            ArrayList<Integer> tempList = new ArrayList<>();
-//            for(Integer i : hs){
-//                tempList.add(i);
-//            }
-//            cycleLog.add(tempList);
-//        }
 
 
         int tickCounter = 0;
@@ -144,13 +132,13 @@ public class DisplayData {
                         System.out.print("   ");
                     } else{
                         int indexTemp = line - (maxSize-sizeTemp+1)/ 2;
-                        boolean isThisActivated = (tickData.get(level).getHistory().get(indexTemp).getItem2() < tickData.get(level).getHistory().get(indexTemp).getItem3());
+                        boolean isThisActivated = (tickData.get(level).getHistory().get(indexTemp).getItem2() <= tickData.get(level).getHistory().get(indexTemp).getItem3());
                         if(indexTemp % 2 == 0){ // 인덱스가 짝수일때 좌로 치우친 위치
                             if(indexTemp*2 < sizeTemp){    // 인덱스 증가시 중심축에서 멀어짐
                                 for(int k = indexTemp*2; k < sizeTemp; k++)
                                     System.out.print("    ");
                                 System.out.print("  [");
-                                if(tickData.contains(isThisActivated))
+                                if(isThisActivated)
                                     System.out.print("O");
                                 else
                                     System.out.print("x");
@@ -161,7 +149,7 @@ public class DisplayData {
                                 for(int k = 0; k < indexTemp*2-sizeTemp; k++)
                                     System.out.print("    ");
                                 System.out.print("  [");
-                                if(tickData.contains(isThisActivated))
+                                if(isThisActivated)
                                     System.out.print("O");
                                 else
                                     System.out.print("x");
@@ -179,7 +167,7 @@ public class DisplayData {
                                 for(int k = 0; k < indexTemp*2; k++)
                                     System.out.print("    ");
                                 System.out.print("  [");
-                                if(tickData.contains(isThisActivated))
+                                if(isThisActivated)
                                     System.out.print("O");
                                 else
                                     System.out.print("x");
@@ -190,7 +178,7 @@ public class DisplayData {
                                 for(int k = indexTemp*2-sizeTemp; k < sizeTemp; k++)
                                     System.out.print("    ");
                                 System.out.print("  [");
-                                if(tickData.contains(isThisActivated))
+                                if(isThisActivated)
                                     System.out.print("O");
                                 else
                                     System.out.print("x");
