@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 
 public class ProcessNode extends Node implements ProcessNodeInter {
 
-    ArrayList<Edge> prevEdgeList = new ArrayList<>();
+    private ArrayList<Edge> prevEdgeList = new ArrayList<>();
     public ProcessNode(String name, int serial, double criticalPoint) {
         super(name, serial, criticalPoint);
     }

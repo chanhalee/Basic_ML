@@ -1,6 +1,5 @@
 package Level;
 
-import java.util.List;
 
 public class StimulusAccount {
 	private int retainingTerm;

@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 public abstract class Node {
     static int totalNodeQuantity = 0;
     int activeCounter = 0;
-    ArrayList<Edge> edgeList = new ArrayList<>(); // 여기서 할당하지 않고 null으로 초기화 한다면 outputNode 의 경우 회로에서 오류발생.
+    ArrayList<Edge> edgeList = new ArrayList<>(); // 여기서 할당하지 않고 null으로 초기화 한다면 outputNode 의 경우 회로에서 오류발생. (여긴 좀 더 수정 필요)
 
     final String NAME;
     public final int SERIAL_NUMBER;
@@ -36,7 +36,7 @@ public abstract class Node {
     protected boolean active = false;
 
 
-    private NodeData backupData = null; /*prevData 로 변수명 변경 검토*/    // 이상치 발견시 SentinelNode 가 접근하여 롤백
+    private NodeData backupData = null; /*prevData 로 변수명 변경 검토*/    // 이상치 발견시 SentinelNode 가 접근하여 롤백 (미구현)
 
 
 
@@ -122,7 +122,7 @@ public abstract class Node {
     ////----- ABSTRACT METHOD------
     abstract int getNodeFormat();
 
-    //센티넬을 위한 벡업기능 제작
+    //센티넬을 위한 벡업기능 제작 -by NodeData 활용
 }
 //
 //
@@ -139,9 +139,9 @@ public abstract class Node {
 
 class NodeData implements NodeDataStorage {
 
-    final int SERIAL_NUMBER;
-    final String NAME;
-    final double INIT_CRITICAL;
+    private final int SERIAL_NUMBER;
+    private final String NAME;
+    private final double INIT_CRITICAL;
 
 
     int activeCounter = 0;
@@ -183,61 +183,6 @@ class NodeData implements NodeDataStorage {
 
 }
 
-/*-------------------------------2.1.1.IdentityData-------------------------------*/
-
-/*class IdentityData implements Node.DataStorage {
-    private final int SERIAL_NUMBER;
-    private final int NODE_FORMAT;
-
-    IdentityData(int nodeFormat, int serial) {
-        NODE_FORMAT = nodeFormat;
-        SERIAL_NUMBER = serial;
-    }
-
-
-    @Override
-    public IdentityData copy() {
-        return new IdentityData(SERIAL_NUMBER, NODE_FORMAT);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = (int) (NODE_FORMAT * 1000 + SERIAL_NUMBER);
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj != null && obj instanceof IdentityData) {
-            IdentityData that = (IdentityData) obj;
-            if (this.hashCode() == that.hashCode())
-                return true;
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return "" + this.hashCode();
-    }
-
-}*/
-//
-//
-/*-------------------------------2.2.Edge.Edge-------------------------------*/
-/// 독립된 파일에 만듦. (node 밖에서도 사용.)
-
-
-
-//
-//
-//
-//
-//
-//
-//
-//
-//
 /*-------------------------------2.I.데이터 저장소와 관련된 인터페이스-------------------------------*/
 
 interface NodeDataStorage {
@@ -246,3 +191,4 @@ interface NodeDataStorage {
 
 /*-------------------------------E.노드의 발전형에 이식될 인터페이스-------------------------------*/
 
+// 미구현

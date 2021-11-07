@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 
 public class OutputNode extends Node implements OutputNodeInter{
 
-    ArrayList<Edge> prevEdgeList = new ArrayList<>();
+    private ArrayList<Edge> prevEdgeList = new ArrayList<>();
     public OutputNode(String name, int serial, double criticalPoint) {
         super(name, serial, criticalPoint);
     }
