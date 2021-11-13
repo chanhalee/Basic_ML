@@ -43,7 +43,7 @@ Fire Together? Wire Together! -stimulated by Breakwater model
 
 Entity > Circuit > Level > Node > Edge
 #### 1. Entity: 하나의 인격체
-            향후 인격체간 상호작용을 염두해두고 만들었다. 현제는 인격체 내부의 사고회로안에서만 상호작용이 일어나는 형태로
+            향후 인격체간 상호작용을 염두해두고 만들었다. 현재는 인격체 내부의 사고회로안에서만 상호작용이 일어나는 형태로
             
             Entity간 상호작용은 구현되지 않았다.
             
